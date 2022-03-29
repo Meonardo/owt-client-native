@@ -27,15 +27,6 @@ class MediaConstraints;
 }  // namespace webrtc
 
 namespace owt {
-namespace conference {
-class ConferencePeerConnectionChannel;
-class ConferenceWebTransportChannel;
-class ConferenceClient;
-class ConferenceInfo;
-}  // namespace conference
-namespace p2p {
-class P2PPeerConnectionChannel;
-}
 namespace base {
 class MediaConstraintsImpl;
 class CustomizedFramesCapturer;
@@ -77,8 +68,6 @@ class WebrtcVideoRendererVaImpl;
 
 /// Base class of all streams with media stream
 class Stream {
-  friend class owt::conference::ConferenceClient;
-
  public:
   Stream(MediaStreamInterface* media_stream, StreamSourceInfo source);
   /** @cond */
@@ -419,12 +408,6 @@ class LocalStream : public Stream {
   remote stream outside SDK.
 */
 class RemoteStream : public Stream {
-  friend class owt::conference::ConferencePeerConnectionChannel;
-  friend class owt::conference::ConferenceWebTransportChannel;
-  friend class owt::conference::ConferenceClient;
-  friend class owt::conference::ConferenceInfo;
-  friend class owt::p2p::P2PPeerConnectionChannel;
-
  public:
   /** @cond */
   explicit RemoteStream(

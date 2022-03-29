@@ -43,7 +43,7 @@ FRAMEWORK_INFO_PATH = os.path.join(HOME_PATH, 'talk', 'owt', 'sdk',
     'supportingfiles', 'objc', 'Info.plist')
 FRAMEWORK_MODULE_MAP_PATH = os.path.join(HOME_PATH, 'talk', 'owt', 'sdk',
     'supportingfiles', 'objc', 'module.modulemap')
-SDK_TARGETS = ['owt_sdk_base', 'owt_sdk_p2p', 'owt_sdk_conf', 'owt_sdk_objc', 'owt_deps']
+SDK_TARGETS = ['owt_sdk_base', 'owt_sdk_objc', 'owt_deps']
 APP_TARGETS = ['AppRTCMobile']
 WEBRTC_FRAMEWORK_NAME = 'WebRTC.framework'
 # common_video_unittests and modules_unittests are not enabled because some failure cases.
