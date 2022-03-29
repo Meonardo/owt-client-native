@@ -107,15 +107,15 @@ def _getlibs(arch, scheme, ssl_root):
     result = []
     owt_path = os.path.join(OUT_PATH, r'%s-%s\obj\talk\owt\owt.lib' % (scheme, arch))
     result.append(owt_path)
-    ssl_lib_path = os.path.join(ssl_root, 'lib')
-    for root, dirs, files in os.walk(ssl_lib_path):
-        for file in files:
-            name, ext = os.path.splitext(file)
-            if ext == '.lib' and name not in LIB_BLACK_LIST and 'test' not in name:
-                result.append(os.path.abspath(os.path.join(root, file)))
-                print('Merged %s.lib' % name)
-            elif ext == '.lib':
-                print('Skip %s.lib' % name)
+    # ssl_lib_path = os.path.join(ssl_root, 'lib')
+    # for root, dirs, files in os.walk(ssl_lib_path):
+    #     for file in files:
+    #         name, ext = os.path.splitext(file)
+    #         if ext == '.lib' and name not in LIB_BLACK_LIST and 'test' not in name:
+    #             result.append(os.path.abspath(os.path.join(root, file)))
+    #             print('Merged %s.lib' % name)
+    #         elif ext == '.lib':
+    #             print('Skip %s.lib' % name)
     return result
 
 
@@ -126,6 +126,7 @@ def _mergelibs(arch, scheme, ssl_root):
     libs = _getlibs(arch, scheme, ssl_root)
     command = ['lib.exe', '/OUT:out\%s' % out_lib]
     command.extend(libs)
+    print("_mergelibs cmd: ", command)
     subprocess.call(command, cwd=HOME_PATH)
 
 
@@ -178,7 +179,7 @@ def pack_sdk(scheme, output_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--arch', default='x86', dest='arch', choices=('x86', 'x64', 'arm64'),
+    parser.add_argument('--arch', default='x64', dest='arch', choices=('x86', 'x64', 'arm64'),
                         help='Target architecture. Supported value: x86, x64, arm64')
     parser.add_argument('--ssl_root', help='Path for OpenSSL.')
     parser.add_argument('--msdk_root', help='Path for MSDK.')
@@ -195,6 +196,7 @@ def main():
                         help='To generate the API document.')
     parser.add_argument('--output_path', help='Path to copy sdk.')
     opts = parser.parse_args()
+    
     if opts.ssl_root and not os.path.exists(os.path.expanduser(opts.ssl_root)):
         print('Invalid ssl_root.')
         return 1
@@ -205,6 +207,7 @@ def main():
         print('Invalid quic_root')
         return 1
     print(opts)
+
     if opts.gn_gen:
         if not gngen(opts.arch, opts.ssl_root, opts.msdk_root, opts.quic_root,
                      opts.scheme, opts.tests):

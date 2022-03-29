@@ -74,6 +74,26 @@ MFXVideoSession* MSDKFactory::InternalCreateSession(bool use_d3d11) {
   mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
   if (use_d3d11)
     impl |= MFX_IMPL_VIA_D3D11;
+  mfxVersion version = {{3, 1}};    
+
+  MFXVideoSession* session = new MFXVideoSession();
+  if (!session)
+    return nullptr;
+
+  sts = session->Init(impl, &version);
+  if (sts != MFX_ERR_NONE) {
+    delete session;
+
+    return InternalCreateSessionImplAny();
+  }
+
+  // For Linux you may want to set VA display here.
+  return session;
+}
+
+MFXVideoSession* MSDKFactory::InternalCreateSessionImplAny() {
+  mfxStatus sts = MFX_ERR_NONE;
+  mfxIMPL impl = MFX_IMPL_AUTO_ANY;
   mfxVersion version = {{3, 1}};
 
   MFXVideoSession* session = new MFXVideoSession();
@@ -85,8 +105,6 @@ MFXVideoSession* MSDKFactory::InternalCreateSession(bool use_d3d11) {
     delete session;
     return nullptr;
   }
-
-  // For Linux you may want to set VA display here.
   return session;
 }
 

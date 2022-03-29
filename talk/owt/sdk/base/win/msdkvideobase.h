@@ -100,6 +100,8 @@ class MSDKFactory {
   MSDKFactory();
   bool Init();
   MFXVideoSession* InternalCreateSession(bool use_d3d11 = true);
+  // rollback create MFXVideoSession obj if upper func not working.
+  MFXVideoSession* InternalCreateSessionImplAny();
 
  private:
   static MSDKFactory* singleton;

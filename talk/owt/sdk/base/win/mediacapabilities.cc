@@ -74,7 +74,7 @@ MediaCapabilities::SupportedCapabilitiesForVideoEncoder(
         support_vp9_8 = true;
         support_vp9_10 = true;
       }
-#endif
+#endif 
 #if (MFX_VERSION >= 1031)
       if (mfx_platform_.MediaAdapterType == MFX_MEDIA_DISCRETE)
         is_discrete_graphics = true;
