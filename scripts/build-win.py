@@ -83,10 +83,17 @@ def gngen(arch, ssl_root, msdk_root, quic_root, scheme, tests):
         gn_args.append('rtc_include_tests=false')
         gn_args.append('owt_include_tests=false')
     flattened_args = ' '.join(gn_args)
+
+    print("Home path: ", HOME_PATH)
+    print("args: ", flattened_args)
+    print("output path: ", getoutputpath(arch, scheme))
+
     ret = subprocess.call(['gn.bat', 'gen', getoutputpath(arch, scheme), '--args=%s' % flattened_args],
                           cwd=HOME_PATH, shell=False)
     if ret == 0:
         return True
+    
+    print("subprocess call return", ret)
     return False
 
 
@@ -206,14 +213,15 @@ def main():
     if opts.quic_root and not os.path.exists(os.path.expanduser(opts.quic_root)):
         print('Invalid quic_root')
         return 1
-    print(opts)
+    # print(opts)
 
     if opts.gn_gen:
-        if not gngen(opts.arch, opts.ssl_root, opts.msdk_root, opts.quic_root,
-                     opts.scheme, opts.tests):
+        if not gngen(opts.arch, opts.ssl_root, opts.msdk_root, opts.quic_root, opts.scheme, opts.tests):
+            print("gn gen failed!")
             return 1
     if opts.sdk:
         if not ninjabuild(opts.arch, opts.scheme):
+            print("ninjabuild failed!")
             return 1
         else:
             _mergelibs(opts.arch, opts.scheme, opts.ssl_root)
@@ -225,6 +233,7 @@ def main():
             return 1
     if opts.output_path:
         pack_sdk(opts.scheme, opts.output_path)
+
     print('Done')
     return 0
 
