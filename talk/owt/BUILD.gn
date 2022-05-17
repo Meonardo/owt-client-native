@@ -128,6 +128,11 @@ static_library("owt_sdk_base") {
     "sdk/include/cpp/owt/base/logging.h",
     "sdk/include/cpp/owt/base/stream.h",
     "sdk/include/cpp/owt/base/videorendererinterface.h",
+    "sdk/include/cpp/owt/base/RTCClientObserver.h",
+    "sdk/base/RTCClient.cpp",
+    "sdk/include/cpp/owt/base/RTCClient.h",
+    "sdk/base/RTCConnectionChannel.cpp",
+    "sdk/base/RTCConnectionChannel.h",
   ]
   if (is_win || is_linux) {
     sources += [
