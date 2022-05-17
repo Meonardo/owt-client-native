@@ -119,11 +119,19 @@ class Stream {
   virtual void AttachVideoRenderer(VideoRendererInterface& renderer);
 #endif
 
+
 #if defined(WEBRTC_WIN)
   /// Attach the stream to a renderer to receive frames from decoder.
   /// Both I420 frame and native surface is supported.
   virtual void AttachVideoRenderer(VideoRenderWindow& render_window);
+
+  virtual void AddVideoRenderer(VideoRenderWindow& render_window);
+  virtual void RemoveVideoRenderer(VideoRenderWindow& render_window);
+  virtual void RemoveAllRenderers();
+
 #endif
+
+
   /// Detach the stream from its renderer.
   virtual void DetachVideoRenderer();
   /// Detach the stream from the audio player.
@@ -161,6 +169,10 @@ class Stream {
   std::string id_;
   mutable std::mutex observer_mutex_;
   std::vector<std::reference_wrapper<StreamObserver>> observers_;
+#if defined(WEBRTC_WIN)
+  std::unordered_map<std::string, WebrtcVideoRendererD3D11Impl*>
+      renderers_;
+#endif
 };
 
 #ifdef OWT_ENABLE_QUIC

@@ -280,6 +280,72 @@ void Stream::AttachVideoRenderer(VideoRenderWindow& render_window) {
     delete old_renderer;
   RTC_LOG(LS_INFO) << "Attached the stream to a renderer.";
 }
+
+void Stream::AddVideoRenderer(VideoRenderWindow& render_window) {
+  if (media_stream_ == nullptr) {
+    RTC_LOG(LS_ERROR) << "Cannot attach an audio only stream to a renderer.";
+    return;
+  }
+
+  auto render_id = render_window.ID();
+  if (renderers_.count(render_id) > 0) {
+    RTC_LOG(LS_ERROR) << "Render already exist!";
+    return;
+  }
+
+  auto video_tracks = media_stream_->GetVideoTracks();
+  if (video_tracks.size() == 0) {
+    RTC_LOG(LS_ERROR) << "Attach failed because of no video tracks.";
+    return;
+  } else if (video_tracks.size() > 1) {
+    RTC_LOG(LS_WARNING)
+        << "There are more than one video tracks, the first one "
+           "will be attachecd to renderer.";
+  }
+  WebrtcVideoRendererD3D11Impl* d3d11_renderer_impl =
+      new WebrtcVideoRendererD3D11Impl(render_window.GetWindowHandle());
+  video_tracks[0]->AddOrUpdateSink(d3d11_renderer_impl, rtc::VideoSinkWants());
+  
+  auto pair = std::pair<std::string, WebrtcVideoRendererD3D11Impl*>(
+      render_id, d3d11_renderer_impl);
+  renderers_.insert(pair);
+
+  RTC_LOG(LS_INFO) << "Attached the stream to a renderer.";
+}
+
+void Stream::RemoveVideoRenderer(VideoRenderWindow& render_window) {
+  auto video_tracks = media_stream_->GetVideoTracks();
+  if (video_tracks.size() == 0)
+    return;
+
+  auto render_id = render_window.ID();
+  auto render_it = renderers_.find(render_id);
+
+  if (render_it != renderers_.end()) {
+    auto renderer = render_it->second;
+    video_tracks[0]->RemoveSink(renderer);
+    delete renderer;
+    renderer = nullptr;
+
+    renderers_.erase(render_id);
+  } 
+}
+
+void Stream::RemoveAllRenderers() {
+  if (renderers_.empty())
+    return;
+  auto video_tracks = media_stream_->GetVideoTracks();
+  if (video_tracks.size() == 0)
+    return;
+
+  for (auto& pair : renderers_) {
+    auto renderer = pair.second;
+    video_tracks[0]->RemoveSink(renderer);
+    delete renderer;
+    renderer = nullptr;
+  }
+  renderers_.clear();
+}
 #endif
 
 void Stream::DetachVideoRenderer() {

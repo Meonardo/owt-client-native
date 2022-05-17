@@ -8,6 +8,7 @@
 #if defined(WEBRTC_WIN)
 #include <d3d11.h>
 #include <windows.h>
+#include <sstream>
 #endif
 #if defined(WEBRTC_LINUX)
 #if defined(WEBRTC_USE_X11)
@@ -60,6 +61,12 @@ class VideoRenderWindow {
     @return Returns the window handle.
   */
   HWND GetWindowHandle() { return wnd_; }
+  // Get HWND str
+  std::string ID() {
+    std::stringstream ss;
+    ss << wnd_;
+    return ss.str();
+  }
  private:
   HWND wnd_;
 };
