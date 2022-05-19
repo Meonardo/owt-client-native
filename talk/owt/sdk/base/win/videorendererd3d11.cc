@@ -58,22 +58,38 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
   }
 
   if (dxgi_factory_ != nullptr) {
+    dxgi_factory_.Release();
     dxgi_factory_ = nullptr;
   }
   if (dxgi_device2_ != nullptr) {
+    dxgi_device2_.Release();
     dxgi_device2_ = nullptr;
   }
   if (comp_device2_ != nullptr) {
+    comp_device2_.Release();
     comp_device2_ = nullptr;
   }
   if (comp_target_ != nullptr) {
+    comp_target_.Release();
     comp_target_ = nullptr;
   }
   if (root_visual_ != nullptr) {
+    root_visual_.Release();
     root_visual_ = nullptr;
   }
   if (visual_preview_ != nullptr) {
+    visual_preview_.Release();
     visual_preview_ = nullptr;
+  }
+  if (swap_chain_for_hwnd_ != nullptr) {
+    swap_chain_for_hwnd_.Release();
+    swap_chain_for_hwnd_ = nullptr;
+  }
+  if (video_processor_enum_ != nullptr && video_processor_ != nullptr) {
+    video_processor_enum_.Release();
+    video_processor_enum_ = nullptr;
+    video_processor_.Release();
+    video_processor_ = nullptr;
   }
 
   if (d3d11_texture_ != nullptr) {
@@ -91,16 +107,6 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
   if (d3d11_video_context_ != nullptr) {
     d3d11_video_context_->Release();
     d3d11_video_context_ = nullptr;
-  }
-  if (swap_chain_for_hwnd_ != nullptr) {
-    swap_chain_for_hwnd_.Release();
-    swap_chain_for_hwnd_ = nullptr;
-  }
-  if (video_processor_enum_ != nullptr && video_processor_ != nullptr) {
-    video_processor_enum_.Release();
-    video_processor_enum_ = nullptr;
-    video_processor_.Release();
-    video_processor_ = nullptr;
   }
 
   // printf("WebrtcVideoRendererD3D11Impl deint.\n");
@@ -142,8 +148,8 @@ void WebrtcVideoRendererD3D11Impl::OnFrame(
   // so we're not rounding it up to even number.
   RECT rect;
   GetClientRect(wnd_, &rect);
-  int window_width = rect.right - rect.left;
-  int window_height = rect.bottom - rect.top;
+  /*int window_width = rect.right - rect.left;
+  int window_height = rect.bottom - rect.top;*/
 
   if (video_frame.video_frame_buffer()->type() ==
       webrtc::VideoFrameBuffer::Type::kNative) {
