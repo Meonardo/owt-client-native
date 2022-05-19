@@ -431,6 +431,9 @@ class RemoteStream : public Stream {
                         const std::string& from);
   // Remote stream initialized without capabilities are considered data stream.
   explicit RemoteStream(const std::string& id, const std::string& from);
+
+  ~RemoteStream();
+
   virtual void Attributes(
       const std::unordered_map<std::string, std::string>& attributes) {
     attributes_ = attributes;

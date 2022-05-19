@@ -41,7 +41,7 @@ class WebrtcVideoRendererD3D11Impl
  public:
   WebrtcVideoRendererD3D11Impl(HWND wnd);
   virtual void OnFrame(const webrtc::VideoFrame& frame) override;
-  virtual ~WebrtcVideoRendererD3D11Impl() {}
+  virtual ~WebrtcVideoRendererD3D11Impl();
 
  private:
   bool InitMPO(int width, int height);

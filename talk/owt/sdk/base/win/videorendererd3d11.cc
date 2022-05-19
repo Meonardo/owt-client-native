@@ -39,6 +39,73 @@ WebrtcVideoRendererD3D11Impl::WebrtcVideoRendererD3D11Impl(HWND wnd)
   sr_enabled_ = SupportSuperResolution();
 }
 
+WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
+  if (d3d11_video_device_ != nullptr) {
+    d3d11_video_device_->Release();
+    d3d11_video_device_ = nullptr;
+  }
+  if (p_mt != nullptr) {
+    p_mt->Release();
+    p_mt = nullptr;
+  }
+  if (d3d11_device_ != nullptr) {
+    d3d11_device_->Release();
+    d3d11_device_ = nullptr;
+  }
+  if (d3d11_device2_ != nullptr) {
+    d3d11_device2_->Release();
+    d3d11_device2_ = nullptr;
+  }
+
+  if (dxgi_factory_ != nullptr) {
+    dxgi_factory_ = nullptr;
+  }
+  if (dxgi_device2_ != nullptr) {
+    dxgi_device2_ = nullptr;
+  }
+  if (comp_device2_ != nullptr) {
+    comp_device2_ = nullptr;
+  }
+  if (comp_target_ != nullptr) {
+    comp_target_ = nullptr;
+  }
+  if (root_visual_ != nullptr) {
+    root_visual_ = nullptr;
+  }
+  if (visual_preview_ != nullptr) {
+    visual_preview_ = nullptr;
+  }
+
+  if (d3d11_texture_ != nullptr) {
+    d3d11_texture_->Release();
+    d3d11_texture_ = nullptr;
+  }
+  if (d3d11_staging_texture_ != nullptr) {
+    d3d11_staging_texture_->Release();
+    d3d11_staging_texture_ = nullptr;
+  }
+  if (d3d11_device_context_ != nullptr) {
+    d3d11_device_context_->Release();
+    d3d11_device_context_ = nullptr;
+  }
+  if (d3d11_video_context_ != nullptr) {
+    d3d11_video_context_->Release();
+    d3d11_video_context_ = nullptr;
+  }
+  if (swap_chain_for_hwnd_ != nullptr) {
+    swap_chain_for_hwnd_.Release();
+    swap_chain_for_hwnd_ = nullptr;
+  }
+  if (video_processor_enum_ != nullptr && video_processor_ != nullptr) {
+    video_processor_enum_.Release();
+    video_processor_enum_ = nullptr;
+    video_processor_.Release();
+    video_processor_ = nullptr;
+  }
+
+  // printf("WebrtcVideoRendererD3D11Impl deint.\n");
+}
+
 // The swapchain needs to use window height/width of even number.
 bool WebrtcVideoRendererD3D11Impl::GetWindowSizeForSwapChain(int& width, int& height) {
   if (!wnd_ || !IsWindow(wnd_))
@@ -113,14 +180,14 @@ void WebrtcVideoRendererD3D11Impl::OnFrame(
     RenderNativeHandleFrame(video_frame);
   } else {  // I420 frame passed.
     // First scale down to target window size.
-    webrtc::VideoFrame new_frame(video_frame);
+    /*webrtc::VideoFrame new_frame(video_frame);
     rtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
         I420Buffer::Create(window_width, window_height);
     auto i420_buffer = video_frame.video_frame_buffer()->ToI420();
     scaled_buffer->ScaleFrom(*i420_buffer);
-    new_frame.set_video_frame_buffer(scaled_buffer);
+    new_frame.set_video_frame_buffer(scaled_buffer);*/
 
-    RenderI420Frame_DX11(new_frame);
+    RenderI420Frame_DX11(video_frame);
   }
   return;
 }

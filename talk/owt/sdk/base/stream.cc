@@ -133,6 +133,7 @@ Stream::~Stream() {
   DetachAudioPlayer();
   if (media_stream_)
     media_stream_->Release();
+  RTC_LOG(LS_INFO) << "Stream deinit.";
 }
 void Stream::MediaStream(MediaStreamInterface* media_stream) {
   if (media_stream == nullptr) {
@@ -757,6 +758,10 @@ RemoteStream::RemoteStream(MediaStreamInterface* media_stream,
   Id(media_stream->id());
   media_stream_ = media_stream;
   media_stream_->AddRef();
+}
+
+RemoteStream::~RemoteStream() {
+  RTC_LOG(LS_INFO) << "RemoteStream deinit.";
 }
 
 RemoteStream::RemoteStream(
