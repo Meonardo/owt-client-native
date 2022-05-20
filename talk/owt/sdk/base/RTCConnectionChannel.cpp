@@ -13,17 +13,11 @@ namespace owt
             is_screencast_(is_screencast),
             session_state_(kSessionStateReady),
             remote_stream_(nullptr),
-            last_disconnect_(std::chrono::time_point<std::chrono::system_clock>::max()),
-            reconnect_timeout_(10),
             is_creating_offer_(false),
-            remote_side_supports_plan_b_(false),
-            remote_side_supports_remove_stream_(false),
-            remote_side_supports_unified_plan_(true),
-            remote_side_supports_continual_ice_gathering_(true),
             pending_remote_sdp_(std::make_tuple("", ""))
         {
-            auto task_queue_factory_ = webrtc::CreateDefaultTaskQueueFactory();
-            event_queue_ = std::make_unique<rtc::TaskQueue>(task_queue_factory_->CreateTaskQueue("ConnectionChannelEventQueue", webrtc::TaskQueueFactory::Priority::NORMAL));
+            /*auto task_queue_factory_ = webrtc::CreateDefaultTaskQueueFactory();
+            event_queue_ = std::make_unique<rtc::TaskQueue>(task_queue_factory_->CreateTaskQueue("ConnectionChannelEventQueue", webrtc::TaskQueueFactory::Priority::NORMAL));*/
 
             InitializePeerConnection();
         }
@@ -72,8 +66,7 @@ namespace owt
                         &RTCConnectionChannel::OnCreateSessionDescriptionFailure,
                         this, std::placeholders::_1));
             bool rtp_no_mux = webrtc::field_trial::IsEnabled("OWT-IceUnbundle");
-            auto offer_answer_options =
-                webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();
+            auto offer_answer_options = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions();
             offer_answer_options.use_rtp_mux = !rtp_no_mux;
             peer_connection_->CreateOffer(observer, offer_answer_options);
         }
@@ -270,23 +263,23 @@ namespace owt
             case webrtc::PeerConnectionInterface::kIceConnectionCompleted:
                 ChangeSessionState(kSessionStateConnected);
                 // reset |last_disconnect_|.
-                last_disconnect_ = std::chrono::time_point<std::chrono::system_clock>::max();
+                // last_disconnect_ = std::chrono::time_point<std::chrono::system_clock>::max();
                 break;
             case webrtc::PeerConnectionInterface::kIceConnectionDisconnected:
-                last_disconnect_ = std::chrono::system_clock::now();
-                // Check state after a period of time.
-                std::thread([this]() {
-                    std::this_thread::sleep_for(std::chrono::seconds(reconnect_timeout_));
-                    if (std::chrono::system_clock::now() - last_disconnect_ >= std::chrono::seconds(reconnect_timeout_))
-                    {
-                        RTC_LOG(LS_INFO) << "Detect reconnection failed, stop this session.";
-                        Stop();
-                    }
-                    else {
-                        RTC_LOG(LS_INFO) << "Detect reconnection succeed.";
-                    }
-                    }).detach();
-                    break;
+                //last_disconnect_ = std::chrono::system_clock::now();
+                //// Check state after a period of time.
+                //std::thread([this]() {
+                //    std::this_thread::sleep_for(std::chrono::seconds(reconnect_timeout_));
+                //    if (std::chrono::system_clock::now() - last_disconnect_ >= std::chrono::seconds(reconnect_timeout_))
+                //    {
+                //        RTC_LOG(LS_INFO) << "Detect reconnection failed, stop this session.";
+                //        Stop();
+                //    }
+                //    else {
+                //        RTC_LOG(LS_INFO) << "Detect reconnection succeed.";
+                //    }
+                //    }).detach();
+                //    break;
             case webrtc::PeerConnectionInterface::kIceConnectionClosed:
                 // TriggerOnStopped();
                 CleanLastPeerConnection();
@@ -434,8 +427,10 @@ namespace owt
 
         void RTCConnectionChannel::CleanLastPeerConnection()
         {
-            remote_stream_.reset();
-            last_disconnect_ = std::chrono::time_point<std::chrono::system_clock>::max();
+          if (remote_stream_ != nullptr) {
+              remote_stream_.reset();
+          }
+            // last_disconnect_ = std::chrono::time_point<std::chrono::system_clock>::max();
         }
 
         void RTCConnectionChannel::DrainPendingRemoteCandidates()

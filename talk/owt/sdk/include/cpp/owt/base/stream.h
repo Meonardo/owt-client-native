@@ -51,6 +51,8 @@ class StreamObserver {
   virtual void OnMute(TrackKind track_kind) {}
   /// Triggered when the stream is unmuted
   virtual void OnUnmute(TrackKind track_kind) {}
+  /// Triggered when the decoded different frame size
+  virtual void OnVideoFrameSizeChanged(const Resolution& r) {}
 #ifdef OWT_ENABLE_QUIC
   /// Triggered when the underlying stream is a QUIC stream, and data is available
   /// for reading.
@@ -61,13 +63,18 @@ class WebrtcVideoRendererImpl;
 class WebrtcAudioRendererImpl;
 #if defined(WEBRTC_WIN)
 class WebrtcVideoRendererD3D11Impl;
+class VideoFrameSizeChangeObserver;
 #endif
 #if defined(WEBRTC_LINUX)
 class WebrtcVideoRendererVaImpl;
 #endif
 
 /// Base class of all streams with media stream
-class Stream {
+class Stream 
+#if defined(WEBRTC_WIN)
+    : public VideoFrameSizeChangeObserver
+#endif 
+{
  public:
   Stream(MediaStreamInterface* media_stream, StreamSourceInfo source);
   /** @cond */
@@ -129,6 +136,7 @@ class Stream {
   virtual void RemoveVideoRenderer(VideoRenderWindow& render_window);
   virtual void RemoveAllRenderers();
 
+  Resolution GetVideoFrameSize() const;
 #endif
 
 
@@ -172,6 +180,7 @@ class Stream {
 #if defined(WEBRTC_WIN)
   std::unordered_map<std::string, WebrtcVideoRendererD3D11Impl*>
       renderers_;
+  virtual void OnVideoFrameSizeChanged(const Resolution& r) override;
 #endif
 };
 

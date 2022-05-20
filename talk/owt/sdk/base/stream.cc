@@ -306,7 +306,8 @@ void Stream::AddVideoRenderer(VideoRenderWindow& render_window) {
   WebrtcVideoRendererD3D11Impl* d3d11_renderer_impl =
       new WebrtcVideoRendererD3D11Impl(render_window.GetWindowHandle());
   video_tracks[0]->AddOrUpdateSink(d3d11_renderer_impl, rtc::VideoSinkWants());
-  
+  d3d11_renderer_impl->AddVideoFrameChangeObserver(this);
+
   auto pair = std::pair<std::string, WebrtcVideoRendererD3D11Impl*>(
       render_id, d3d11_renderer_impl);
   renderers_.insert(pair);
@@ -347,6 +348,22 @@ void Stream::RemoveAllRenderers() {
   }
   renderers_.clear();
 }
+
+Resolution Stream::GetVideoFrameSize() const {
+  if (renderers_.empty() || media_stream_->GetVideoTracks().size() == 0)
+    return Resolution(0, 0);
+  auto f = renderers_.begin();
+  return f->second->GetFrameSize();
+}
+
+void Stream::OnVideoFrameSizeChanged(const Resolution& r) {
+  if (observers_.empty())
+    return;
+  for (auto its = observers_.begin(); its != observers_.end(); ++its) {
+    (*its).get().OnVideoFrameSizeChanged(r);
+  }
+}
+
 #endif
 
 void Stream::DetachVideoRenderer() {

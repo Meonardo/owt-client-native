@@ -38,17 +38,12 @@ namespace owt
 
             RTCClientObserver* events_observer_;
 
-            std::shared_ptr<rtc::TaskQueue> event_queue_;
-
-            bool remote_side_supports_plan_b_;
-            bool remote_side_supports_remove_stream_;
-            bool remote_side_supports_unified_plan_;
-            bool remote_side_supports_continual_ice_gathering_;
+            // std::shared_ptr<rtc::TaskQueue> event_queue_;
 
             // Last time |peer_connection_| changes its state to "disconnect".
-            std::chrono::time_point<std::chrono::system_clock> last_disconnect_;
+            // std::chrono::time_point<std::chrono::system_clock> last_disconnect_;
             // Unit: second.
-            int reconnect_timeout_;
+            // int reconnect_timeout_;
 
             // It will be true during creating and setting offer.
             bool is_creating_offer_;

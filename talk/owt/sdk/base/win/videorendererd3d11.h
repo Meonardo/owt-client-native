@@ -27,6 +27,8 @@
 #include <vector>
 
 #include "talk/owt/sdk/base/win/vpedefs.h"
+#include "talk/owt/sdk/include/cpp/owt/base/commontypes.h"
+
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/api/video/video_sink_interface.h"
 #include "webrtc/rtc_base/thread.h"
@@ -36,12 +38,17 @@
 namespace owt {
 namespace base {
 
+class VideoFrameSizeChangeObserver;
+
 class WebrtcVideoRendererD3D11Impl
     : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
   WebrtcVideoRendererD3D11Impl(HWND wnd);
   virtual void OnFrame(const webrtc::VideoFrame& frame) override;
   virtual ~WebrtcVideoRendererD3D11Impl();
+
+  Resolution GetFrameSize() const;
+  void AddVideoFrameChangeObserver(VideoFrameSizeChangeObserver* o);
 
  private:
   bool InitMPO(int width, int height);
@@ -60,6 +67,10 @@ class WebrtcVideoRendererD3D11Impl
   HWND wnd_ = nullptr;
   int window_width_ = 0;
   int window_height_ = 0;
+
+  unsigned long frame_width_ = 0;
+  unsigned long frame_height_ = 0;
+  VideoFrameSizeChangeObserver* frame_observer_; 
 
   // D3D11 objects
   ID3D10Multithread* p_mt = nullptr;

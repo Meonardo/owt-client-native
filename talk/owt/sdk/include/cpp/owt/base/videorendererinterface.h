@@ -28,6 +28,11 @@ enum class VideoRendererType {
   kD3D11,  // Format self-described.
 };
 
+class VideoFrameSizeChangeObserver {
+ public:
+  virtual void OnVideoFrameSizeChanged(const Resolution& r) = 0;
+};
+
 #if defined(WEBRTC_WIN)
 struct D3D11ImageHandle {
   ID3D11Device* d3d11_device;

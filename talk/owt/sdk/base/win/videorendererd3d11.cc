@@ -109,7 +109,7 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
     d3d11_video_context_ = nullptr;
   }
 
-  // printf("WebrtcVideoRendererD3D11Impl deint.\n");
+  printf("WebrtcVideoRendererD3D11Impl deint.\n");
 }
 
 // The swapchain needs to use window height/width of even number.
@@ -143,6 +143,13 @@ void WebrtcVideoRendererD3D11Impl::OnFrame(
 
   if (!wnd_ || !IsWindow(wnd_) || !IsWindowVisible(wnd_))
     return;
+
+  if (frame_observer_ != nullptr && frame_width_ != width &&
+      frame_height_ != height) {
+    frame_observer_->OnVideoFrameSizeChanged(Resolution(width, height));
+  }
+  frame_width_ = width;
+  frame_height_ = height;
 
   // Window width here is used to scale down the I420 frame,
   // so we're not rounding it up to even number.
@@ -196,6 +203,15 @@ void WebrtcVideoRendererD3D11Impl::OnFrame(
     RenderI420Frame_DX11(video_frame);
   }
   return;
+}
+
+Resolution WebrtcVideoRendererD3D11Impl::GetFrameSize() const {
+  return Resolution(frame_width_, frame_height_);
+}
+
+void WebrtcVideoRendererD3D11Impl::AddVideoFrameChangeObserver(
+    VideoFrameSizeChangeObserver* o) {
+  frame_observer_ = o;
 }
 
 bool WebrtcVideoRendererD3D11Impl::InitD3D11(int width, int height) {
