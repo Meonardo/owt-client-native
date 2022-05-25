@@ -420,8 +420,11 @@ int MSDKVideoEncoder::InitEncodeOnEncoderThread(
   if (num_temporal_layers_ == 0)
     num_temporal_layers_ = 1;
 
-  vp9_rc_config_ = CreateVP9RateControlConfig();
-  vp9_rate_ctrl_ = VP9RateControl::Create(vp9_rc_config_);
+  if (codec_id == MFX_CODEC_VP9) {
+    vp9_rc_config_ = CreateVP9RateControlConfig();
+    vp9_rate_ctrl_ = VP9RateControl::Create(vp9_rc_config_);
+  }
+
   memset(&frame_params_, 0, sizeof(frame_params_));
 
   // TODO: MSDK is using ExtAvcTemporalLayers for HEVC as well. This should be fixed.
@@ -797,9 +800,11 @@ void MSDKVideoEncoder::SetRates(const RateControlParameters& parameters) {
   if (parameters.bitrate.get_sum_bps() != 0) {
     bitrate_ = parameters.bitrate.get_sum_bps();
     frame_rate = parameters.framerate_fps;
-    vp9_rc_config_ = CreateVP9RateControlConfig();
-    // Update to rate controller with new bandwidth settings.
-    vp9_rate_ctrl_->UpdateRateControl(vp9_rc_config_);
+    if (codec_type_ == webrtc::kVideoCodecVP9) {
+      vp9_rc_config_ = CreateVP9RateControlConfig();
+      // Update to rate controller with new bandwidth settings.
+      vp9_rate_ctrl_->UpdateRateControl(vp9_rc_config_);
+    }
   }
 }
 
