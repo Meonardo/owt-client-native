@@ -462,5 +462,10 @@ namespace owt
             rtc::scoped_refptr<FunctionalStatsObserver> observer = FunctionalStatsObserver::Create(std::move(callback));
             peer_connection_->GetStats(observer, nullptr, webrtc::PeerConnectionInterface::kStatsOutputLevelDebug);
         }
+
+        void RTCConnectionChannel::ResetPeerConnectionFactory() 
+        {
+            PeerConnectionDependencyFactory::Reset();
+        }
 	}
 }

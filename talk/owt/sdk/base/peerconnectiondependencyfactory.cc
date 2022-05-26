@@ -79,7 +79,7 @@ PeerConnectionThread::~PeerConnectionThread() {
 }
 rtc::scoped_refptr<PeerConnectionDependencyFactory>
     PeerConnectionDependencyFactory::dependency_factory_;
-std::once_flag get_pcdf_once;
+
 PeerConnectionDependencyFactory::PeerConnectionDependencyFactory()
     : pc_thread_(rtc::Thread::CreateWithSocketServer()),
       callback_thread_(rtc::Thread::CreateWithSocketServer()),
@@ -95,7 +95,10 @@ PeerConnectionDependencyFactory::PeerConnectionDependencyFactory()
   pc_thread_->SetName("peerconnection_dependency_factory_thread", nullptr);
   pc_thread_->Start();
 }
-PeerConnectionDependencyFactory::~PeerConnectionDependencyFactory() {}
+PeerConnectionDependencyFactory::~PeerConnectionDependencyFactory() {
+  printf("[PeerConnectionDependencyFactory] deinit\n");
+}
+
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 PeerConnectionDependencyFactory::CreatePeerConnection(
     const webrtc::PeerConnectionInterface::RTCConfiguration& config,
@@ -108,13 +111,20 @@ PeerConnectionDependencyFactory::CreatePeerConnection(
       .get();
 }
 PeerConnectionDependencyFactory* PeerConnectionDependencyFactory::Get() {
-  std::call_once(get_pcdf_once, []() {
+  if (dependency_factory_ == nullptr) {
     dependency_factory_ =
         new rtc::RefCountedObject<PeerConnectionDependencyFactory>();
     dependency_factory_->CreatePeerConnectionFactory();
-  });
+  }
   return dependency_factory_.get();
 }
+
+void PeerConnectionDependencyFactory::Reset() {
+  dependency_factory_.release();
+  dependency_factory_ = nullptr;
+  printf("[PeerConnectionDependencyFactory] reset\n");
+}
+
 const scoped_refptr<PeerConnectionFactoryInterface>&
 PeerConnectionDependencyFactory::GetPeerConnectionFactory() {
   if (!pc_factory_.get())

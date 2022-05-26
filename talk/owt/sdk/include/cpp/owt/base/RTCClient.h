@@ -42,6 +42,9 @@ namespace owt
 
             // Get connection stats
             void GetConnectionStats();
+
+            // Reset peerconnection factory settings
+            static void ResetPeerConnectionFactory();
         };
     }
 }

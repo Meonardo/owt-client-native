@@ -101,5 +101,10 @@ namespace owt
         {
             pcc_->GetConnectionStats();
         }
+
+        void RTCClient::ResetPeerConnectionFactory()
+        {
+            RTCConnectionChannel::ResetPeerConnectionFactory();
+        }
     }
 }

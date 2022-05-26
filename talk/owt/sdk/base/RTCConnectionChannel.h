@@ -105,6 +105,8 @@ namespace owt
             virtual void OnSetLocalSessionDescriptionFailure(const std::string& error) override;
             virtual void OnSetRemoteSessionDescriptionSuccess() override;
             virtual void OnSetRemoteSessionDescriptionFailure(const std::string& error) override;
+
+            static void ResetPeerConnectionFactory();
         };
     }
 	
