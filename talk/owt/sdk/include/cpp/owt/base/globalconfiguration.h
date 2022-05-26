@@ -87,6 +87,13 @@ class GlobalConfiguration {
   static void SetVideoHardwareAccelerationEnabled(bool enabled) {
     hardware_acceleration_enabled_ = enabled;
   }
+  /**
+  @brief This function gets hardware acceleration is enabled or not.
+  @return true or false.
+  */
+  static bool GetVideoHardwareAccelerationEnabled() {
+    return hardware_acceleration_enabled_;
+  }
 #endif
 
 #if defined(WEBRTC_WIN)
@@ -235,13 +242,6 @@ class GlobalConfiguration {
   GlobalConfiguration() {}
   virtual ~GlobalConfiguration() {}
 #if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
-  /**
-   @brief This function gets hardware acceleration is enabled or not.
-   @return true or false.
-   */
-  static bool GetVideoHardwareAccelerationEnabled() {
-    return hardware_acceleration_enabled_;
-  }
   static bool hardware_acceleration_enabled_;
 #endif
   /**

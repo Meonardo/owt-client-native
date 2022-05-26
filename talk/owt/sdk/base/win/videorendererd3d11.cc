@@ -40,6 +40,7 @@ WebrtcVideoRendererD3D11Impl::WebrtcVideoRendererD3D11Impl(HWND wnd)
 }
 
 WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
+  bool hwacc = GlobalConfiguration::GetVideoHardwareAccelerationEnabled();
   if (d3d11_video_device_ != nullptr) {
     d3d11_video_device_->Release();
     d3d11_video_device_ = nullptr;
@@ -93,9 +94,12 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
   }
 
   if (d3d11_texture_ != nullptr) {
-    d3d11_texture_->Release();
+    if (!hwacc) {
+      d3d11_texture_->Release();
+    }
     d3d11_texture_ = nullptr;
   }
+
   if (d3d11_staging_texture_ != nullptr) {
     d3d11_staging_texture_->Release();
     d3d11_staging_texture_ = nullptr;
@@ -109,7 +113,7 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
     d3d11_video_context_ = nullptr;
   }
 
-  printf("WebrtcVideoRendererD3D11Impl deint.\n");
+  printf("[WebrtcVideoRendererD3D11Impl] deinit.\n");
 }
 
 // The swapchain needs to use window height/width of even number.
