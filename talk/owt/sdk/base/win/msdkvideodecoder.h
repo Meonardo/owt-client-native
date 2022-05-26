@@ -79,7 +79,7 @@ private:
     webrtc::VideoCodecType codec_type_;
     // Begin MSDK variables
     MFXVideoSession* m_mfx_session_;
-    std::unique_ptr<MFXVideoDECODE> m_pmfx_dec_;
+    MFXVideoDECODE* m_pmfx_dec_;
     std::shared_ptr<D3D11FrameAllocator> m_pmfx_allocator_;
     mfxVideoParam m_pmfx_video_params_;
     mfxBitstream m_mfx_bs_;

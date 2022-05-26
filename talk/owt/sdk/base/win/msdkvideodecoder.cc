@@ -22,13 +22,20 @@ namespace base {
 
 int32_t MSDKVideoDecoder::Release() {
     WipeMfxBitstream(&m_mfx_bs_);
+
+    delete m_pmfx_dec_;
+    m_pmfx_dec_ = nullptr;
+
     if (m_mfx_session_) {
       MSDKFactory* factory = MSDKFactory::Get();
       if (factory) {
         factory->UnloadMSDKPlugin(m_mfx_session_, &m_plugin_id_);
         factory->DestroySession(m_mfx_session_);
       }
+      // delete m_mfx_session_;
+      m_mfx_session_ = nullptr;
     }
+
     m_pmfx_allocator_.reset();
     MSDK_SAFE_DELETE_ARRAY(m_pinput_surfaces_);
     inited_ = false;
@@ -58,6 +65,42 @@ MSDKVideoDecoder::~MSDKVideoDecoder() {
   if (decoder_thread_.get() != nullptr){
     decoder_thread_->Stop();
   }
+
+  if (d3d11_device_ != nullptr) {
+    d3d11_device_.Release();
+    d3d11_device_ = nullptr;
+  }
+
+  if (d3d11_device_context_ != nullptr) {
+    d3d11_device_context_.Release();
+    d3d11_device_context_ == nullptr;
+  }
+
+  if (d3d11_video_device_ != nullptr) {
+    d3d11_video_device_.Release();
+    d3d11_video_device_ = nullptr;
+  }
+
+  if (d3d11_video_context_ != nullptr) {
+    d3d11_video_context_.Release();
+    d3d11_video_context_ = nullptr;
+  }
+
+  if (m_pdxgi_factory_ != nullptr) {
+    m_pdxgi_factory_.Release();
+    m_pdxgi_factory_ = nullptr;
+  }
+
+  if (m_padapter_ != nullptr) {
+    m_padapter_.Release();
+    m_padapter_ = nullptr;
+  }
+
+  if (surface_handle_ != nullptr) {
+    surface_handle_.reset();
+  }
+
+  printf("[MSDKVideoDecoder] deinit\n");
 }
 
 void MSDKVideoDecoder::CheckOnCodecThread() {
@@ -167,8 +210,10 @@ int32_t MSDKVideoDecoder::InitDecode(const webrtc::VideoCodec* codecSettings, in
 }
 
 int32_t MSDKVideoDecoder::Reset() {
-  m_pmfx_dec_->Close();
-  m_pmfx_dec_.reset(new MFXVideoDECODE(*m_mfx_session_));
+  delete m_pmfx_dec_;
+  m_pmfx_dec_ = nullptr;
+
+  m_pmfx_dec_ = new MFXVideoDECODE(*m_mfx_session_);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -187,8 +232,10 @@ int32_t MSDKVideoDecoder::InitDecodeOnCodecThread() {
   uint32_t codec_id = MFX_CODEC_AVC;
 
   if (inited_) {
-    if (m_pmfx_dec_)
-      m_pmfx_dec_->Close();
+    if (m_pmfx_dec_ != nullptr) {
+      delete m_pmfx_dec_;
+      m_pmfx_dec_ = nullptr;
+    }
     MSDK_SAFE_DELETE_ARRAY(m_pinput_surfaces_);
 
     if (m_pmfx_allocator_) {
@@ -240,7 +287,8 @@ int32_t MSDKVideoDecoder::InitDecodeOnCodecThread() {
     m_mfx_bs_.Data = new mfxU8[MSDK_BS_INIT_SIZE];
     m_mfx_bs_.MaxLength = MSDK_BS_INIT_SIZE;
     RTC_LOG(LS_ERROR) << "Creating underlying MSDK decoder.";
-    m_pmfx_dec_.reset(new MFXVideoDECODE(*m_mfx_session_));
+    // m_pmfx_dec_.reset(new MFXVideoDECODE(*m_mfx_session_));
+    m_pmfx_dec_ = new MFXVideoDECODE(*m_mfx_session_);
     if (m_pmfx_dec_ == nullptr) {
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -270,7 +318,7 @@ int32_t MSDKVideoDecoder::Decode(
 
 dec_header:
   if (inited_ && !m_video_param_extracted) {
-    if (!m_pmfx_dec_.get()) {
+    if (!m_pmfx_dec_) {
       RTC_LOG(LS_ERROR) << "MSDK decoder not created.";
     }
     sts = m_pmfx_dec_->DecodeHeader(&m_mfx_bs_, &m_pmfx_video_params_);
