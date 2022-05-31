@@ -96,6 +96,22 @@ PeerConnectionDependencyFactory::PeerConnectionDependencyFactory()
   pc_thread_->Start();
 }
 PeerConnectionDependencyFactory::~PeerConnectionDependencyFactory() {
+  if (worker_thread != nullptr) {
+    worker_thread->Stop();
+  }
+  if (signaling_thread != nullptr) {
+    signaling_thread->Stop();
+  }
+  if (network_thread != nullptr) {
+    network_thread->Stop();
+  }
+  if (pc_thread_ != nullptr) {
+    pc_thread_->Stop();
+  }
+  if (callback_thread_ != nullptr) {
+    callback_thread_->Stop();
+  }
+
   printf("[PeerConnectionDependencyFactory] deinit\n");
 }
 
@@ -120,8 +136,12 @@ PeerConnectionDependencyFactory* PeerConnectionDependencyFactory::Get() {
 }
 
 void PeerConnectionDependencyFactory::Reset() {
+  dependency_factory_->pc_factory_->Release();
+  dependency_factory_->pc_factory_.release();
+
+  dependency_factory_->Release();
   dependency_factory_.release();
-  dependency_factory_ = nullptr;
+
   printf("[PeerConnectionDependencyFactory] reset\n");
 }
 
@@ -264,7 +284,7 @@ void PeerConnectionDependencyFactory::
       webrtc::CreateBuiltinAudioEncoderFactory(),
       webrtc::CreateBuiltinAudioDecoderFactory(), std::move(encoder_factory),
       std::move(decoder_factory), nullptr, nullptr);
-  pc_factory_->AddRef();
+  // pc_factory_->AddRef();
   RTC_LOG(LS_INFO) << "CreatePeerConnectionOnCurrentThread finished.";
 }
 

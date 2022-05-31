@@ -40,7 +40,7 @@ class PeerConnectionDependencyFactory : public rtc::RefCountInterface {
   // Get a PeerConnectionDependencyFactory instance. It doesn't create a new
   // instance. It always return the same instance.
   static PeerConnectionDependencyFactory* Get();
-  // Reset this sigleton instance
+  // Reset this singleton instance
   static void Reset();
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
