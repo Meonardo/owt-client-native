@@ -10,14 +10,6 @@ namespace owt
 
         class RTCClient final
         {
-        private:
-            // PeerConnection
-            std::shared_ptr<RTCConnectionChannel> pcc_;
-            // RTCConfigs
-            RTCClientConfiguration rtc_config_;
-            // help method
-            PeerConnectionChannelConfiguration GetPeerConnectionChannelConfiguration();
-
         public:
             std::string id() const;
             bool is_screencast() const;
@@ -45,6 +37,14 @@ namespace owt
 
             // Reset peerconnection factory settings
             static void ResetPeerConnectionFactory();
+
+        private:
+            // PeerConnection
+            std::shared_ptr<RTCConnectionChannel> pcc_;
+            // RTCConfigs
+            RTCClientConfiguration rtc_config_;
+            // help method
+            PeerConnectionChannelConfiguration GetPeerConnectionChannelConfiguration();
         };
     }
 }

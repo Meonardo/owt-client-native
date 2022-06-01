@@ -28,64 +28,32 @@ namespace owt
 
         class RTCConnectionChannel : public PeerConnectionChannel
         {
-        private:
-            std::string id_;
-            bool is_screencast_;
-            // local publishing stream
-            std::shared_ptr<LocalStream> local_stream_;
-            // remote stream
-            std::shared_ptr<RemoteStream> remote_stream_;
-
-            RTCClientObserver* events_observer_;
-
-            // std::shared_ptr<rtc::TaskQueue> event_queue_;
-
-            // Last time |peer_connection_| changes its state to "disconnect".
-            // std::chrono::time_point<std::chrono::system_clock> last_disconnect_;
-            // Unit: second.
-            // int reconnect_timeout_;
-
-            // It will be true during creating and setting offer.
-            bool is_creating_offer_;
-            std::mutex is_creating_offer_mutex_;
-
-            std::vector<std::tuple<std::string, std::string, int>> pending_remote_icecandidates_;
-            std::mutex pending_remote_icecandidates_mutex_;
-
-            std::tuple<std::string, std::string> pending_remote_sdp_;
-
-            SessionState session_state_;
-
-            void ChangeSessionState(SessionState state);
-            void Stop();
-            void CleanLastPeerConnection();
-
-            void DrainPendingRemoteCandidates();
-
         public:
             explicit RTCConnectionChannel(PeerConnectionChannelConfiguration config, const std::string& id, bool is_screencast = false);
             virtual ~RTCConnectionChannel();
-
+            // Unique id
             std::string id() const;
+            // Receiving screencast from mobile devices
             bool is_screencast() const;
-
+            // Create offer
             void CreateOffer() override;
+            // Create Answer
             void CreateAnswer() override;
             // Publish a local stream to remote user.
             void Publish(std::shared_ptr<LocalStream> stream);
             // Unpublish a local stream to remote user.
             void Unpublish();
-
+            // Have local Offer
             bool HaveLocalOffer();
-
+            // Set remoteSDP
             void SetRemoteSDP(const std::string& sdp, const std::string& type);
+            // Set ICE candidates
             void SetRemoteICECandidate(const std::string& sdp, const std::string& sdp_mid, int sdp_mline_index);
-
+            // Close PC
             void ClosePeerConnection();
-
+            // Add `RTCClientObserver` observer
             void AddObserver(RTCClientObserver* observer);
-
-            // Get connection stats
+            // Get connection stats: fps, resolution, bps etc.
             void GetConnectionStats();
 
             // PeerConnectionObserver
@@ -107,6 +75,40 @@ namespace owt
             virtual void OnSetRemoteSessionDescriptionFailure(const std::string& error) override;
 
             static void ResetPeerConnectionFactory();
+
+        private:
+            std::string id_;
+            bool is_screencast_;
+            // local publishing stream
+            std::shared_ptr<LocalStream> local_stream_;
+            // remote stream
+            std::shared_ptr<RemoteStream> remote_stream_;
+
+            RTCClientObserver* events_observer_;
+
+            // std::shared_ptr<rtc::TaskQueue> event_queue_;
+
+            // Last time |peer_connection_| changes its state to "disconnect".
+            // std::chrono::time_point<std::chrono::system_clock>
+            // last_disconnect_; Unit: second. int reconnect_timeout_;
+
+            // It will be true during creating and setting offer.
+            bool is_creating_offer_;
+            std::mutex is_creating_offer_mutex_;
+
+            std::vector<std::tuple<std::string, std::string, int>>
+                pending_remote_icecandidates_;
+            std::mutex pending_remote_icecandidates_mutex_;
+
+            std::tuple<std::string, std::string> pending_remote_sdp_;
+
+            SessionState session_state_;
+
+            void ChangeSessionState(SessionState state);
+            void Stop();
+            void CleanLastPeerConnection();
+
+            void DrainPendingRemoteCandidates();
         };
     }
 	
