@@ -8,9 +8,14 @@
 #include "webrtc/rtc_base/logging.h"
 #include "talk/owt/sdk/include/cpp/owt/base/deviceutils.h"
 
+#include "webrtc/modules/audio_device/win/core_audio_utility_win.h"
+#include <algorithm>
+
 using namespace rtc;
+
 namespace owt {
 namespace base {
+
 std::vector<std::string> DeviceUtils::VideoCapturerIds() {
   std::vector<std::string> device_ids;
   std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
@@ -164,6 +169,95 @@ std::string DeviceUtils::GetDeviceNameByIndex(int index) {
   std::string name(device_name);
   return name;
 }
+
+/// Get audio capturer Devices.
+std::vector<AudioDevice> DeviceUtils::AudioCapturerDevices() {
+  std::vector<AudioDevice> v;
+
+#if defined(WEBRTC_WIN)
+  webrtc::AudioDeviceNames device_names;
+  bool ok =
+      webrtc::webrtc_win::core_audio_utility::GetInputDeviceNames(&device_names);
+  if (ok) {
+    v.reserve(device_names.size());
+    for (const auto& d : device_names) {
+      v.emplace_back(d.device_name, d.unique_id);
+    }
+  }
+#endif
+
+  return v;
+}
+
+/// Get the microphone device index by its device id.
+int DeviceUtils::GetAudioCapturerDeviceIndex(const std::string& id) {
+#if defined(WEBRTC_WIN)
+  if (IsDefaultDeviceId(id)) {
+    return kDefault;
+  } else if (IsDefaultCommunicationsDeviceId(id)) {
+    return kDefaultCommunications;
+  } else {
+    std::vector<AudioDevice> d = AudioCapturerDevices();
+    auto it = std::find_if(d.begin(), d.end(), [&id](const AudioDevice& dd) {
+      return dd.unique_id == id;
+    });
+    if (it != d.end()) {
+      return std::distance(d.begin(), it);
+    }
+  }
+#endif
+
+  return -1;
+}
+
+/// Get microphone device's user friendly name by index.
+AudioDevice DeviceUtils::GetAudioCapturerDeviceByIndex(int index) {
+#if defined(WEBRTC_WIN)
+  if (index >= NumberOfEnumeratedDevices()) {
+    RTC_LOG(LS_ERROR) << "Invalid device index";
+    return AudioDevice("", "");
+  }
+
+  std::vector<AudioDevice> d = AudioCapturerDevices();
+  if (d.empty()) {
+    RTC_LOG(LS_ERROR) << "Can not enumerate device currently";
+    return AudioDevice("", "");
+  }
+
+  return d.at(index);
+#else
+  return AudioDevice("", "");
+#endif
+}
+
+#if defined(WEBRTC_WIN)
+int DeviceUtils::NumberOfActiveDevices() {
+  return webrtc::webrtc_win::core_audio_utility::NumberOfActiveDevices(eCapture);
+}
+
+int DeviceUtils::NumberOfEnumeratedDevices() {
+  const int num_active = NumberOfActiveDevices();
+  return num_active > 0 ? num_active + kDefaultDeviceTypeMaxCount : 0;
+}
+
+bool DeviceUtils::IsDefaultCommunicationsDevice(int index) {
+  return index == kDefaultCommunications;
+}
+
+bool DeviceUtils::IsDefaultDevice(int index) {
+  return index == kDefault;
+}
+
+bool DeviceUtils::IsDefaultDeviceId(const std::string& device_id) {
+  return device_id ==
+         webrtc::webrtc_win::core_audio_utility::GetDefaultInputDeviceID();
+}
+
+bool DeviceUtils::IsDefaultCommunicationsDeviceId(const std::string& device_id) {
+  return device_id == webrtc::webrtc_win::core_audio_utility::
+      GetCommunicationsInputDeviceID();
+}
+#endif
 
 }
 }
