@@ -259,7 +259,7 @@ void PeerConnectionDependencyFactory::
   // if adm is nullptr, voe_base will initilize it with the default internal
   // adm.
   if (GlobalConfiguration::GetCustomizedAudioInputEnabled()) {
-    // Create ADM on worker thred as RegisterAudioCallback is invoked there.
+    // Create ADM on worker thread as RegisterAudioCallback is invoked there.
     adm = worker_thread->Invoke<rtc::scoped_refptr<AudioDeviceModule>>(
         RTC_FROM_HERE,
         Bind(&PeerConnectionDependencyFactory::
@@ -278,6 +278,8 @@ void PeerConnectionDependencyFactory::
 #endif
   }
 #endif
+
+  adm_ = adm;
 
   pc_factory_ = webrtc::CreatePeerConnectionFactory(
       network_thread.get(), worker_thread.get(), signaling_thread.get(), adm,
@@ -419,6 +421,40 @@ scoped_refptr<webrtc::AudioDeviceModule> PeerConnectionDependencyFactory::
       GlobalConfiguration::GetAudioFrameGenerator());
 }
 #endif
+
+int PeerConnectionDependencyFactory::SelectRecordingDevice(int index) {
+  int r = worker_thread->Invoke<int>(
+      RTC_FROM_HERE, Bind(&PeerConnectionDependencyFactory::SelectRecordingDeviceOnWorkThread,
+                          this, index));
+  return r;
+}
+
+int PeerConnectionDependencyFactory::SelectRecordingDeviceOnWorkThread(int index) {
+  if (adm_ == nullptr)
+    return -1;
+  if (adm_->Recording()) 
+    adm_->StopRecording();
+
+  if (adm_->SetRecordingDevice(index) != 0) {
+    RTC_LOG(LS_ERROR) << "Unable to set recording device.";
+    return -1;
+  }
+  if (adm_->InitMicrophone() != 0) {
+    RTC_LOG(LS_ERROR) << "Unable to access microphone.";
+    return -1;
+  }
+
+  // Set number of channels
+  bool available = false;
+  if (adm_->StereoRecordingIsAvailable(&available) != 0) {
+    RTC_LOG(LS_ERROR) << "Failed to query stereo recording.";
+  }
+  if (adm_->SetStereoRecording(available) != 0) {
+    RTC_LOG(LS_ERROR) << "Failed to set stereo recording mode.";
+  }
+
+  return adm_->StartRecording();
+}
 
 }  // namespace base
 }  // namespace owt

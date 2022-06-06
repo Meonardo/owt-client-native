@@ -62,6 +62,10 @@ class PeerConnectionDependencyFactory : public rtc::RefCountInterface {
   // Returns current |pc_factory_|.
   rtc::scoped_refptr<PeerConnectionFactoryInterface> PeerConnectionFactory()
       const;
+
+  // Set recording device Id, querry device please see DeviceUtils::AudioCapturerDevices
+  int SelectRecordingDevice(int index);
+
   ~PeerConnectionDependencyFactory();
  protected:
   explicit PeerConnectionDependencyFactory();
@@ -78,10 +82,13 @@ class PeerConnectionDependencyFactory : public rtc::RefCountInterface {
       webrtc::PeerConnectionObserver* observer);
 #if defined(WEBRTC_WIN) || defined(WEBRTC_LINUX)
   rtc::scoped_refptr<webrtc::AudioDeviceModule> CreateCustomizedAudioDeviceModuleOnCurrentThread();
+  int SelectRecordingDeviceOnWorkThread(int index);
 #endif
   scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
   static scoped_refptr<PeerConnectionDependencyFactory>
       dependency_factory_;  // Get() always return this instance.
+  // Export adm instance to select audio device.
+  rtc::scoped_refptr<AudioDeviceModule> adm_;
   // This thread performs all operations on pcfactory and pc.
   std::unique_ptr<Thread> pc_thread_;
   // This thread performs all callbacks.

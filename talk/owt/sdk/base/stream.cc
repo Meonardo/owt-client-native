@@ -766,6 +766,13 @@ LocalStream::LocalStream(
   media_stream_ = stream;
   media_stream_->AddRef();
 }
+
+void LocalStream::SelectRecordingDevice(int index) {
+  scoped_refptr<PeerConnectionDependencyFactory> pcd_factory =
+      PeerConnectionDependencyFactory::Get();
+  pcd_factory->SelectRecordingDevice(index);
+}
+
 #endif
 
 RemoteStream::RemoteStream(MediaStreamInterface* media_stream,

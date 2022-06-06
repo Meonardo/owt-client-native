@@ -382,6 +382,18 @@ class LocalStream : public Stream {
   static std::shared_ptr<LocalStream> Create(
       std::shared_ptr<LocalDesktopStreamParameters> parameters,
       std::unique_ptr<LocalScreenStreamObserver> observer);
+
+  /// <summary>
+  /// Select a microphone for recording.
+  /// Note: the index begins with 0, and index == 0 means the default selection from the system
+  /// On Windows Vista and newer, Microsoft introduced the concept of "Default
+  /// Communications Device". This means that there are two types of default
+  /// devices (old Wave Audio style default and Default Communications Device).
+  /// See owt::base::DefaultDeviceType in file deviceutils.h
+  /// </summary>
+  /// <param name="index"> the microphone device to be selected </param>
+  void SelectRecordingDevice(int index);
+
 #endif
   virtual bool AudioEnabled() const { return has_audio_; }
   virtual bool VideoEnabled() const { return has_video_; }
