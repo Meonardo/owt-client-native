@@ -262,8 +262,8 @@ class LocalScreenStreamObserver {
   @param dest_window application will set this id to be used by it.
   */
   virtual void OnCaptureSourceNeeded(
-      const std::unordered_map<int, std::string>& window_list,
-      int& dest_window) {}
+      const std::unordered_map<int, std::string>& source_list,
+      int& dest_source) {}
   virtual ~LocalScreenStreamObserver() {}
 };
 /**

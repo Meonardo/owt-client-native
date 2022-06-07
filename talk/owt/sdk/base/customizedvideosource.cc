@@ -38,7 +38,8 @@ CustomizedVideoCapturerFactory::Create(
     return new rtc::RefCountedObject<BasicWindowCapturer>(options,
                                                           std::move(observer));
   } else {
-    return new rtc::RefCountedObject<BasicScreenCapturer>(options);
+    return new rtc::RefCountedObject<BasicScreenCapturer>(options,
+                                                          std::move(observer));
   }
 }
 #endif

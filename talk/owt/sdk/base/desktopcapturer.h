@@ -77,6 +77,12 @@ class BasicDesktopCapturer : public webrtc::VideoCaptureModule,
   }
   virtual bool SetCaptureWindow(int window_id) { return false; }
 
+  virtual bool GetCurrentScreenList(
+      std::unordered_map<int, std::string>* window_list) {
+    return false;
+  }
+  virtual bool SetCaptureScreen(int screen_id) { return false; }
+
  public:
   rtc::VideoSinkInterface<webrtc::VideoFrame>* data_callback_;
   webrtc::Mutex datacb_lock_;
@@ -87,7 +93,8 @@ class BasicDesktopCapturer : public webrtc::VideoCaptureModule,
 // will convert it to I420 and signal stack of the frame.
 class BasicScreenCapturer : public BasicDesktopCapturer {
  public:
-  BasicScreenCapturer(webrtc::DesktopCaptureOptions options);
+  BasicScreenCapturer(webrtc::DesktopCaptureOptions options,
+                      std::unique_ptr<LocalScreenStreamObserver> observer);
   virtual ~BasicScreenCapturer();
   virtual int32_t StartCapture(
       const webrtc::VideoCaptureCapability& capability) override;
@@ -101,6 +108,9 @@ class BasicScreenCapturer : public BasicDesktopCapturer {
   virtual void OnCaptureResult(
       webrtc::DesktopCapturer::Result result,
       std::unique_ptr<webrtc::DesktopFrame> frame) override;
+
+  virtual bool GetCurrentScreenList(std::unordered_map<int, std::string>* window_list) override;
+  virtual bool SetCaptureScreen(int screen_id) override;
 
  protected:
  private:
@@ -117,6 +127,7 @@ class BasicScreenCapturer : public BasicDesktopCapturer {
   std::unique_ptr<webrtc::DesktopCapturer> screen_capturer_;
   webrtc::DesktopCaptureOptions screen_capture_options_;
   bool capture_started_ = false;
+  std::unique_ptr<LocalScreenStreamObserver> observer_;
   webrtc::Mutex lock_;
   RTC_DISALLOW_COPY_AND_ASSIGN(BasicScreenCapturer);
 };

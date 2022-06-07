@@ -70,12 +70,15 @@ class BasicScreenCapturer::BasicScreenCaptureThread
 /////////////////////////////////////////////////////////////////////
 // Implementation of class BasicScreenCapturer.
 /////////////////////////////////////////////////////////////////////
-BasicScreenCapturer::BasicScreenCapturer(webrtc::DesktopCaptureOptions options)
+BasicScreenCapturer::BasicScreenCapturer(
+    webrtc::DesktopCaptureOptions options,
+    std::unique_ptr<LocalScreenStreamObserver> observer)
     : screen_capture_thread_(nullptr),
       width_(0),
       height_(0),
       frame_buffer_capacity_(0),
       frame_buffer_(nullptr),
+      observer_(std::move(observer)),
       screen_capture_options_(options) {
   screen_capturer_ =
       webrtc::DesktopCapturer::CreateScreenCapturer(screen_capture_options_);
@@ -96,6 +99,16 @@ int32_t BasicScreenCapturer::StartCapture(
     RTC_LOG(LS_ERROR) << "Desktop capturer creation failed, not able to start it";
     return -1;
   }
+
+  if (observer_) {
+    std::unordered_map<int, std::string> screen_map;
+    int screen_id;
+    if (GetCurrentScreenList(&screen_map)) {
+      observer_->OnCaptureSourceNeeded(screen_map, screen_id);
+      SetCaptureScreen(screen_id);
+    }
+  }
+
   screen_capturer_->Start(this);
 
   screen_capture_thread_.reset(new BasicScreenCaptureThread(this));
@@ -209,5 +222,41 @@ void BasicScreenCapturer::OnCaptureResult(
   captured_frame.set_ntp_time_ms(0);
   data_callback_->OnFrame(captured_frame);
 }
+
+bool BasicScreenCapturer::GetCurrentScreenList(std::unordered_map<int, std::string>* screen_list) {
+  if (!screen_capturer_) {
+    RTC_LOG(LS_ERROR) << "No screen capturer.";
+    return false;
+  }
+  webrtc::DesktopCapturer::SourceList sources;
+  bool have_source = screen_capturer_->GetSourceList(&sources);
+  if (!have_source) {
+    RTC_LOG(LS_ERROR) << "No screen available for capture";
+    return false;
+  }
+
+  if (!screen_list->empty()) {
+    screen_list->clear();
+  }
+  for (auto source : sources) {
+    (*screen_list)[source.id] = source.title;
+  }
+  return true;
+}
+
+bool BasicScreenCapturer::SetCaptureScreen(int screen_id) {
+  if (!screen_capturer_) {
+    RTC_LOG(LS_ERROR) << "No screen capturer.";
+    return false;
+  }
+  if (screen_capturer_->SelectSource(screen_id)) {
+    // source_specified_ = true;
+    // Notify capture thread.
+    screen_capturer_->FocusOnSelectedSource();
+    return true;
+  }
+  return false;
+}
+
 }  // namespace base
 }  // namespace owt
