@@ -206,7 +206,8 @@ class LocalDesktopStreamParameters final {
   */
   LocalDesktopStreamParameters(
       bool audio_enabled,
-      bool video_enabled);
+      bool video_enabled,
+      bool cursor_enabled);
   ~LocalDesktopStreamParameters() {}
   /**
   @brief Get video is enabled or not for this stream.
@@ -218,6 +219,8 @@ class LocalDesktopStreamParameters final {
   @return true or false.
   */
   bool AudioEnabled() const { return audio_enabled_; }
+  /// Get mouse cursor enabled state.
+  bool CursorEnabled() const { return cursor_enabled_; }
   /**
     @brief Set the source type of screen/app sharing
     @param source_type Indicate if capturing the full screen
@@ -247,6 +250,7 @@ class LocalDesktopStreamParameters final {
  private:
   bool video_enabled_;
   bool audio_enabled_;
+  bool cursor_enabled_;
   int fps_;
   DesktopSourceType source_type_;
   DesktopCapturePolicy capture_policy_;

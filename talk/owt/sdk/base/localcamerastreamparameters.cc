@@ -31,9 +31,11 @@ void LocalCameraStreamParameters::StreamName(const std::string& stream_name){
 }
 LocalDesktopStreamParameters::LocalDesktopStreamParameters(
     bool audio_enabled,
-    bool video_enabled)
+    bool video_enabled,
+    bool cursor_enabled)
     : video_enabled_(video_enabled),
       audio_enabled_(audio_enabled),
+      cursor_enabled_(cursor_enabled),
       fps_(30),
       source_type_(DesktopSourceType::kFullScreen),
       capture_policy_(DesktopCapturePolicy::kDefault) {}

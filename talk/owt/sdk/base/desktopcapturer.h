@@ -94,7 +94,8 @@ class BasicDesktopCapturer : public webrtc::VideoCaptureModule,
 class BasicScreenCapturer : public BasicDesktopCapturer {
  public:
   BasicScreenCapturer(webrtc::DesktopCaptureOptions options,
-                      std::unique_ptr<LocalScreenStreamObserver> observer);
+                      std::unique_ptr<LocalScreenStreamObserver> observer,
+                      bool cursor_enabled);
   virtual ~BasicScreenCapturer();
   virtual int32_t StartCapture(
       const webrtc::VideoCaptureCapability& capability) override;
@@ -109,7 +110,7 @@ class BasicScreenCapturer : public BasicDesktopCapturer {
       webrtc::DesktopCapturer::Result result,
       std::unique_ptr<webrtc::DesktopFrame> frame) override;
 
-  virtual bool GetCurrentScreenList(std::unordered_map<int, std::string>* window_list) override;
+  virtual bool GetCurrentScreenList(std::unordered_map<int, std::string>* source_list) override;
   virtual bool SetCaptureScreen(int screen_id) override;
 
  protected:
@@ -121,6 +122,7 @@ class BasicScreenCapturer : public BasicDesktopCapturer {
   std::unique_ptr<BasicScreenCaptureThread> screen_capture_thread_;
   int width_;
   int height_;
+  bool cursor_enabled_;
   uint32_t frame_buffer_capacity_;
   rtc::scoped_refptr<webrtc::I420Buffer>
       frame_buffer_;  // Reuseable buffer for video frames.
@@ -138,7 +140,8 @@ class BasicScreenCapturer : public BasicDesktopCapturer {
 class BasicWindowCapturer : public BasicDesktopCapturer {
  public:
   BasicWindowCapturer(webrtc::DesktopCaptureOptions options,
-                      std::unique_ptr<LocalScreenStreamObserver> observer);
+                      std::unique_ptr<LocalScreenStreamObserver> observer,
+                      bool cursor_enabled);
   virtual ~BasicWindowCapturer();
 
   // Override virtual methods of parent class VideoCapturer.
@@ -176,6 +179,7 @@ class BasicWindowCapturer : public BasicDesktopCapturer {
   // BasicWindowCaptureThread* window_capture_thread_;
   int width_;
   int height_;
+  bool cursor_enabled_;
   uint32_t frame_buffer_capacity_;
   rtc::scoped_refptr<webrtc::I420Buffer>
       frame_buffer_;  // Reuseable buffer for video frames.

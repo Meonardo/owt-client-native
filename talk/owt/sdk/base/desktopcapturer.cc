@@ -14,6 +14,10 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "talk/owt/sdk/base/desktopcapturer.h"
 
+#include "webrtc/modules/desktop_capture/desktop_and_cursor_composer.h"
+#include "webrtc/modules/desktop_capture/fake_desktop_capturer.h"
+#include "webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
+
 using namespace rtc;
 namespace owt {
 namespace base {
@@ -72,16 +76,25 @@ class BasicScreenCapturer::BasicScreenCaptureThread
 /////////////////////////////////////////////////////////////////////
 BasicScreenCapturer::BasicScreenCapturer(
     webrtc::DesktopCaptureOptions options,
-    std::unique_ptr<LocalScreenStreamObserver> observer)
+    std::unique_ptr<LocalScreenStreamObserver> observer,
+    bool cursor_enabled)
     : screen_capture_thread_(nullptr),
       width_(0),
       height_(0),
+      cursor_enabled_(cursor_enabled),
       frame_buffer_capacity_(0),
       frame_buffer_(nullptr),
       observer_(std::move(observer)),
       screen_capture_options_(options) {
-  screen_capturer_ =
-      webrtc::DesktopCapturer::CreateScreenCapturer(screen_capture_options_);
+  if (cursor_enabled) {
+    std::unique_ptr<webrtc::DesktopCapturer> capturer(
+        webrtc::DesktopCapturer::CreateScreenCapturer(screen_capture_options_));
+    screen_capturer_ = std::make_unique<webrtc::DesktopAndCursorComposer>(
+        std::move(capturer), screen_capture_options_);
+  } else {
+    screen_capturer_ =
+        webrtc::DesktopCapturer::CreateScreenCapturer(screen_capture_options_);
+  }
 }
 BasicScreenCapturer::~BasicScreenCapturer() {
   DeRegisterCaptureDataCallback();

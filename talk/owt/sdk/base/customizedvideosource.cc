@@ -35,11 +35,9 @@ CustomizedVideoCapturerFactory::Create(
   options.set_allow_directx_capturer(true);
   if (parameters->SourceType() ==
       LocalDesktopStreamParameters::DesktopSourceType::kApplication) {
-    return new rtc::RefCountedObject<BasicWindowCapturer>(options,
-                                                          std::move(observer));
+    return new rtc::RefCountedObject<BasicWindowCapturer>(options, std::move(observer), parameters->CursorEnabled());
   } else {
-    return new rtc::RefCountedObject<BasicScreenCapturer>(options,
-                                                          std::move(observer));
+    return new rtc::RefCountedObject<BasicScreenCapturer>(options, std::move(observer), parameters->CursorEnabled());
   }
 }
 #endif
