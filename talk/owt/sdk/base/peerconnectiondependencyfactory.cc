@@ -136,6 +136,9 @@ PeerConnectionDependencyFactory* PeerConnectionDependencyFactory::Get() {
 }
 
 void PeerConnectionDependencyFactory::Reset() {
+  if (dependency_factory_ == nullptr)
+    return;
+
   dependency_factory_->pc_factory_->Release();
   dependency_factory_->pc_factory_.release();
 
