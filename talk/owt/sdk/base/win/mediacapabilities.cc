@@ -372,6 +372,13 @@ MediaCapabilities* MediaCapabilities::Get() {
   return singleton_;
 }
 
+void MediaCapabilities::Reset() {
+  if (singleton_ != nullptr) {
+    delete singleton_;
+    singleton_ = nullptr;
+  }
+}
+
 MediaCapabilities::MediaCapabilities() {}
 
 MediaCapabilities::~MediaCapabilities() {

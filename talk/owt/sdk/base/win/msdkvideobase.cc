@@ -44,7 +44,14 @@ bool MSDKFactory::Init() {
   return true;
 }
 
-MSDKFactory::~MSDKFactory() {}
+MSDKFactory::~MSDKFactory() {
+  if (main_session != nullptr) {
+    main_session->DisjoinSession();
+    main_session->Close();
+    delete main_session;
+    main_session = nullptr;
+  }
+}
 
 void MSDKFactory::MFETimeout(uint32_t timeout) {
   mfe_timeout = timeout < 100 ? timeout : 100;
@@ -69,6 +76,13 @@ MSDKFactory* MSDKFactory::Get() {
   return singleton;
 }
 
+void MSDKFactory::Reset() {
+  if (singleton != nullptr) {
+    delete singleton;
+    singleton = nullptr;
+  }
+}
+
 MFXVideoSession* MSDKFactory::InternalCreateSession(bool use_d3d11) {
   mfxStatus sts = MFX_ERR_NONE;
   mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
@@ -83,7 +97,7 @@ MFXVideoSession* MSDKFactory::InternalCreateSession(bool use_d3d11) {
   sts = session->Init(impl, &version);
   if (sts != MFX_ERR_NONE) {
     delete session;
-
+    session = nullptr;
     return InternalCreateSessionImplAny();
   }
 

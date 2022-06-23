@@ -33,6 +33,8 @@ std::vector<std::string> DeviceUtils::VideoCapturerIds() {
       }
     }
   }
+
+  info.reset();
   return device_ids;
 }
 
@@ -48,11 +50,15 @@ int DeviceUtils::GetVideoCaptureDeviceIndex(const std::string& id) {
       char name[kSize] = {0};
       char mid[kSize] = {0};
       if (info->GetDeviceName(i, name, kSize, mid, kSize) != -1) {
-        if (id == reinterpret_cast<char*>(mid))
+        if (id == reinterpret_cast<char*>(mid)) {
+          info.reset();
           return i;
+        }
       }
     }
   }
+
+  info.reset();
   return -1;
 }
 
@@ -104,6 +110,8 @@ std::vector<Resolution> DeviceUtils::VideoCapturerSupportedResolutions(
       }
     }
   }
+
+  info.reset();
   return resolutions;
 }
 
@@ -156,6 +164,8 @@ DeviceUtils::VideoCapturerSupportedCapabilities(
       }
     }
   }
+
+  info.reset();
   return resolutions;
 }
 
@@ -166,6 +176,8 @@ std::string DeviceUtils::GetDeviceNameByIndex(int index) {
   char unique_name[256];
   info->GetDeviceName(static_cast<uint32_t>(index), device_name,
                       sizeof(device_name), unique_name, sizeof(unique_name));
+
+  info.reset();
   std::string name(device_name);
   return name;
 }

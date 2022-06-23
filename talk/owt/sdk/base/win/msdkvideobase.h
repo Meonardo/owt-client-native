@@ -30,6 +30,7 @@ class MSDKFactory {
   ~MSDKFactory();
 
   static MSDKFactory* Get();
+  static void Reset();
 
   MFXVideoSession* CreateSession(bool use_d3d11 = true);
 

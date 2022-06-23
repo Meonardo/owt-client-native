@@ -40,7 +40,7 @@ WebrtcVideoRendererD3D11Impl::WebrtcVideoRendererD3D11Impl(HWND wnd)
 }
 
 WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
-  bool hwacc = GlobalConfiguration::GetVideoHardwareAccelerationEnabled();
+
   if (d3d11_video_device_ != nullptr) {
     d3d11_video_device_->Release();
     d3d11_video_device_ = nullptr;
@@ -49,19 +49,13 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
     p_mt->Release();
     p_mt = nullptr;
   }
-  if (d3d11_device_ != nullptr) {
-    d3d11_device_->Release();
-    d3d11_device_ = nullptr;
-  }
-  if (d3d11_device2_ != nullptr) {
-    d3d11_device2_->Release();
-    d3d11_device2_ = nullptr;
-  }
-
+  
   if (dxgi_factory_ != nullptr) {
     dxgi_factory_.Release();
     dxgi_factory_ = nullptr;
   }
+
+  // MPO objects
   if (dxgi_device2_ != nullptr) {
     dxgi_device2_.Release();
     dxgi_device2_ = nullptr;
@@ -70,22 +64,22 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
     comp_device2_.Release();
     comp_device2_ = nullptr;
   }
-  if (comp_target_ != nullptr) {
-    comp_target_.Release();
-    comp_target_ = nullptr;
-  }
-  if (root_visual_ != nullptr) {
-    root_visual_.Release();
-    root_visual_ = nullptr;
-  }
   if (visual_preview_ != nullptr) {
     visual_preview_.Release();
     visual_preview_ = nullptr;
   }
-  if (swap_chain_for_hwnd_ != nullptr) {
-    swap_chain_for_hwnd_.Release();
-    swap_chain_for_hwnd_ = nullptr;
+  if (root_visual_ != nullptr) {
+    root_visual_->RemoveAllVisuals();
+    root_visual_.Release();
+    root_visual_ = nullptr;
   }
+  if (comp_target_ != nullptr) {
+    comp_target_->SetRoot(NULL);
+    comp_target_.Release();
+    comp_target_ = nullptr;
+  }
+  // MPO objects end
+
   if (video_processor_enum_ != nullptr && video_processor_ != nullptr) {
     video_processor_enum_.Release();
     video_processor_enum_ = nullptr;
@@ -93,8 +87,13 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
     video_processor_ = nullptr;
   }
 
+  if (d3d11_device2_ != nullptr) {
+    d3d11_device2_->Release();
+    d3d11_device2_ = nullptr;
+  }
   if (d3d11_texture_ != nullptr) {
-    if (!hwacc) {
+    if (!d3d11_mpo_inited_) {
+        // hardware decoding, `d3d11_texture_` will be release in `~MSDKVideoDecoder()`
       d3d11_texture_->Release();
     }
     d3d11_texture_ = nullptr;
@@ -111,6 +110,18 @@ WebrtcVideoRendererD3D11Impl::~WebrtcVideoRendererD3D11Impl() {
   if (d3d11_video_context_ != nullptr) {
     d3d11_video_context_->Release();
     d3d11_video_context_ = nullptr;
+  }
+
+  if (swap_chain_for_hwnd_ != nullptr) {
+    swap_chain_for_hwnd_.Release();
+    swap_chain_for_hwnd_ = nullptr;
+  }
+
+  if (d3d11_device_ != nullptr) {
+    if (!d3d11_mpo_inited_) {
+      d3d11_device_->Release();
+    }
+    d3d11_device_ = nullptr;
   }
 
   printf("[WebrtcVideoRendererD3D11Impl] deinit.\n");
@@ -136,8 +147,7 @@ bool WebrtcVideoRendererD3D11Impl::GetWindowSizeForSwapChain(int& width, int& he
   return true;
 }
 
-void WebrtcVideoRendererD3D11Impl::OnFrame(
-    const webrtc::VideoFrame& video_frame) {
+void WebrtcVideoRendererD3D11Impl::OnFrame(const webrtc::VideoFrame& video_frame) {
   uint16_t width = video_frame.video_frame_buffer()->width();
   uint16_t height = video_frame.video_frame_buffer()->height();
   if (width == 0 || height == 0) {
@@ -162,8 +172,7 @@ void WebrtcVideoRendererD3D11Impl::OnFrame(
   /*int window_width = rect.right - rect.left;
   int window_height = rect.bottom - rect.top;*/
 
-  if (video_frame.video_frame_buffer()->type() ==
-      webrtc::VideoFrameBuffer::Type::kNative) {
+  if (video_frame.video_frame_buffer()->type() == webrtc::VideoFrameBuffer::Type::kNative) {
     D3D11ImageHandle* native_handle = reinterpret_cast<D3D11ImageHandle*>(
         reinterpret_cast<owt::base::NativeHandleBuffer*>(
             video_frame.video_frame_buffer().get())
@@ -221,6 +230,10 @@ void WebrtcVideoRendererD3D11Impl::AddVideoFrameChangeObserver(
 bool WebrtcVideoRendererD3D11Impl::InitD3D11(int width, int height) {
   HRESULT hr = S_OK;
   UINT creation_flags = 0;
+
+#ifdef _DEBUG
+  creation_flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
 
   D3D_FEATURE_LEVEL feature_levels_in[] = {D3D_FEATURE_LEVEL_9_1,  D3D_FEATURE_LEVEL_9_2,
                                 D3D_FEATURE_LEVEL_9_3,  D3D_FEATURE_LEVEL_10_0,
@@ -370,9 +383,9 @@ void WebrtcVideoRendererD3D11Impl::RenderNativeHandleFrame(
   if (d3d11_texture_ == nullptr)
     return;
 
-  d3d11_device_->GetImmediateContext(&d3d11_device_context_);
-  if (d3d11_device_context_ == nullptr)
-    return;
+  if (d3d11_device_context_ == nullptr) {
+    d3d11_device_->GetImmediateContext(&d3d11_device_context_);
+  }
 
   RenderNV12DXGIMPO(video_frame.width(), video_frame.height());
 }
@@ -413,6 +426,7 @@ void WebrtcVideoRendererD3D11Impl::RenderNV12DXGIMPO(int width, int height) {
       // Hold the lock to avoid rendering when resizing buffer.
       webrtc::MutexLock lock(&d3d11_texture_lock_);
       d3d11_device_context_->ClearState();
+      d3d11_device_context_->Flush();
 
       hr = swap_chain_for_hwnd_->ResizeBuffers(0, window_width_, window_height_,
                                                DXGI_FORMAT_UNKNOWN, desc.Flags);
@@ -452,7 +466,7 @@ bool WebrtcVideoRendererD3D11Impl::InitMPO(int width, int height) {
   if (FAILED(hr))
     return false;
 
-  CComPtr<IDCompositionDesktopDevice> desktop_device;
+  CComPtr<IDCompositionDesktopDevice> desktop_device = nullptr;
   hr = DCompositionCreateDevice2(dxgi_device2_, IID_PPV_ARGS(&desktop_device));
   if (FAILED(hr))
     return false;
@@ -490,11 +504,10 @@ bool WebrtcVideoRendererD3D11Impl::InitMPO(int width, int height) {
   if (FAILED(hr))
     return false;
 
-  Microsoft::WRL::ComPtr<IDXGIFactoryMedia> pMediaFactory;
+  Microsoft::WRL::ComPtr<IDXGIFactoryMedia> pMediaFactory = nullptr;
   hr = adapter->GetParent(__uuidof(IDXGIFactoryMedia), (void**)&pMediaFactory);
   if (FAILED(hr))
     return false;
-
 
   DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
   RECT rect;
@@ -537,6 +550,10 @@ bool WebrtcVideoRendererD3D11Impl::InitMPO(int width, int height) {
   hr = comp_device2_->Commit();
   if (FAILED(hr))
     return false;
+
+  desktop_device = nullptr;
+  adapter.Release();
+  pMediaFactory = nullptr;
 
   d3d11_mpo_inited_ = true;
   return true;
@@ -605,7 +622,7 @@ void WebrtcVideoRendererD3D11Impl::RenderD3D11Texture(int width, int height) {
     return;
   }
 
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> dxgi_back_buffer;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> dxgi_back_buffer = nullptr;
   hr = swap_chain_for_hwnd_->GetBuffer(0, IID_PPV_ARGS(&dxgi_back_buffer));
   if (FAILED(hr)) {
     std::string message = std::system_category().message(hr);
@@ -620,7 +637,7 @@ void WebrtcVideoRendererD3D11Impl::RenderD3D11Texture(int width, int height) {
   ZeroMemory(&output_view_desc, sizeof(output_view_desc));
   output_view_desc.ViewDimension = D3D11_VPOV_DIMENSION_TEXTURE2D;
   output_view_desc.Texture2D.MipSlice = 0;
-  Microsoft::WRL::ComPtr<ID3D11VideoProcessorOutputView> output_view;
+  Microsoft::WRL::ComPtr<ID3D11VideoProcessorOutputView> output_view = nullptr;
   hr = d3d11_video_device_->CreateVideoProcessorOutputView(
       dxgi_back_buffer.Get(), video_processor_enum_, &output_view_desc,
       &output_view);
@@ -635,7 +652,7 @@ void WebrtcVideoRendererD3D11Impl::RenderD3D11Texture(int width, int height) {
   input_view_desc.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
   input_view_desc.Texture2D.MipSlice = 0;
   input_view_desc.Texture2D.ArraySlice = 0;
-  Microsoft::WRL::ComPtr<ID3D11VideoProcessorInputView> input_view;
+  Microsoft::WRL::ComPtr<ID3D11VideoProcessorInputView> input_view = nullptr;
   hr = d3d11_video_device_->CreateVideoProcessorInputView(
       d3d11_texture_, video_processor_enum_, &input_view_desc, &input_view);
   if (FAILED(hr)) {
@@ -732,8 +749,8 @@ sr_fail:
     return;
   }
 }
-void WebrtcVideoRendererD3D11Impl::RenderI420Frame_DX11(
-    const webrtc::VideoFrame& video_frame) {
+
+void WebrtcVideoRendererD3D11Impl::RenderI420Frame_DX11(const webrtc::VideoFrame& video_frame) {
   if (!d3d11_raw_inited_ &&
       !InitD3D11(video_frame.width(), video_frame.height())) {
     RTC_LOG(LS_ERROR) << "Failed to init d3d11 device.";

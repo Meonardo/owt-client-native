@@ -227,6 +227,8 @@ protected:
             }
             stagingTexture.clear();
 
+            outerMids.clear();
+
             //marking texture as deallocated
             bAlloc = false;
         }

@@ -51,6 +51,7 @@ class MediaCapabilities {
       std::vector<owt::base::VideoCodec>& codec_types);
   std::vector<VideoDecoderCapability> SupportedCapabilitiesForVideoDecoder(std::vector<owt::base::VideoCodec>& codec_types);
   static MediaCapabilities* Get();
+  static void Reset();
  private:
   bool Init();
   MediaCapabilities();

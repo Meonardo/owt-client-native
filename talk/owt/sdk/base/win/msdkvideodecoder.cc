@@ -32,11 +32,16 @@ int32_t MSDKVideoDecoder::Release() {
         factory->UnloadMSDKPlugin(m_mfx_session_, &m_plugin_id_);
         factory->DestroySession(m_mfx_session_);
       }
+      // this will be delete in `factory->DestroySession(m_mfx_session_);` above
       // delete m_mfx_session_;
       m_mfx_session_ = nullptr;
     }
 
-    m_pmfx_allocator_.reset();
+    if (m_pmfx_allocator_) {
+      m_pmfx_allocator_->Free(m_pmfx_allocator_->pthis, &m_mfx_response_);
+      m_pmfx_allocator_.reset();
+    }
+
     MSDK_SAFE_DELETE_ARRAY(m_pinput_surfaces_);
     inited_ = false;
     return WEBRTC_VIDEO_CODEC_OK;
@@ -64,11 +69,7 @@ MSDKVideoDecoder::~MSDKVideoDecoder() {
   timestamps_.clear();
   if (decoder_thread_.get() != nullptr){
     decoder_thread_->Stop();
-  }
-
-  if (d3d11_device_ != nullptr) {
-    d3d11_device_.Release();
-    d3d11_device_ = nullptr;
+    decoder_thread_.reset();
   }
 
   if (d3d11_device_context_ != nullptr) {
@@ -98,6 +99,52 @@ MSDKVideoDecoder::~MSDKVideoDecoder() {
 
   if (surface_handle_ != nullptr) {
     surface_handle_.reset();
+    surface_handle_ = nullptr;
+  }
+
+  if (d3d11_device_ != nullptr) {
+#ifdef _DEBUG
+    ID3D11Debug* debugDev = nullptr;
+    d3d11_device_->QueryInterface(__uuidof(ID3D11Debug),
+                                  reinterpret_cast<void**>(&debugDev));
+
+#endif
+
+    d3d11_device_.Release();
+    d3d11_device_ = nullptr;
+
+#ifdef _DEBUG
+    ID3D11InfoQueue* d3dInfoQueue = nullptr;
+    if (SUCCEEDED(debugDev->QueryInterface(__uuidof(ID3D11InfoQueue),
+                                           (void**)&d3dInfoQueue))) {
+      d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_MESSAGE, true);
+
+      UINT64 numStoredD3DDebugMessages = d3dInfoQueue->GetNumStoredMessages();
+      if (numStoredD3DDebugMessages > 0) {
+        for (UINT64 i = 0; i < numStoredD3DDebugMessages; i++) {
+          SIZE_T messageLength = 0;
+          HRESULT hr = d3dInfoQueue->GetMessage(i, nullptr, &messageLength);
+
+          if (SUCCEEDED(hr)) {
+            D3D11_MESSAGE* pMessage =
+                reinterpret_cast<D3D11_MESSAGE*>(malloc(messageLength));
+            d3dInfoQueue->GetMessage(i, pMessage, &messageLength);
+
+            RTC_LOG(LS_ERROR) << "[ID3D11InfoQueue Decoder] " << i << ":"
+                              << " " << pMessage->pDescription << "\n";
+
+            free(pMessage);
+          }
+        }
+      }
+
+      d3dInfoQueue->Release();
+    }
+
+    debugDev->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+    debugDev->Release();
+#endif
+    
   }
 
   printf("[MSDKVideoDecoder] deinit\n");
@@ -111,6 +158,12 @@ void MSDKVideoDecoder::CheckOnCodecThread() {
 
 bool MSDKVideoDecoder::CreateD3D11Device() {
   HRESULT hr = S_OK;
+
+  UINT creationFlags = 0;
+
+#ifdef _DEBUG
+  creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
 
   static D3D_FEATURE_LEVEL feature_levels[] = {
       D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1,
@@ -156,8 +209,8 @@ bool MSDKVideoDecoder::CreateD3D11Device() {
 
   // On DG1 this setting driver type to hardware will result-in device
   // creation failure.
-  hr = D3D11CreateDevice(
-      m_padapter_, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, feature_levels,
+  hr = D3D11CreateDevice(m_padapter_, D3D_DRIVER_TYPE_UNKNOWN, nullptr,
+                         creationFlags, feature_levels,
       sizeof(feature_levels) / sizeof(feature_levels[0]), D3D11_SDK_VERSION,
       &d3d11_device_, &feature_levels_out, &d3d11_device_context_);
   if (FAILED(hr)) {
@@ -418,6 +471,12 @@ retry:
       sts = m_mfx_session_->SyncOperation(syncp, MSDK_DEC_WAIT_INTERVAL);
       if (sts >= MFX_ERR_NONE) {
         mfxMemId dxMemId = pOutputSurface->Data.MemId;
+
+        /*size_t mfxMemId_index = (size_t)MFXReadWriteMid(dxMemId).raw() - 1;
+        printf("mfxMemId: %zd\n", mfxMemId_index);
+        if (mfxMemId_index > 0)
+          continue;*/
+
         mfxFrameInfo frame_info = pOutputSurface->Info;
         mfxHDLPair pair = {nullptr};
         // Maybe we should also send the allocator as part of the frame
@@ -427,21 +486,29 @@ retry:
           surface_handle_->d3d11_device = d3d11_device_.p;
           surface_handle_->texture =
               reinterpret_cast<ID3D11Texture2D*>(pair.first);
+
           // Texture_array_index not used when decoding with MSDK.
           surface_handle_->texture_array_index = 0;
           D3D11_TEXTURE2D_DESC texture_desc;
           memset(&texture_desc, 0, sizeof(texture_desc));
           surface_handle_->texture->GetDesc(&texture_desc);
+
+          /*printf("[MSDKVideoDecoder::Decode]Texture: %p, Device: %p\n",
+                 surface_handle_->texture, surface_handle_->d3d11_device);*/
+
           // TODO(johny): we should extend the buffer structure to include
           // not only the CropW|CropH value, but also the CropX|CropY for the
           // renderer to correctly setup the video processor input view.
           rtc::scoped_refptr<owt::base::NativeHandleBuffer> buffer =
               new rtc::RefCountedObject<owt::base::NativeHandleBuffer>(
-                  (void*)surface_handle_.get(), frame_info.CropW, frame_info.CropH);
+                  (void*)surface_handle_.get(), frame_info.CropW,
+                  frame_info.CropH);
+
           webrtc::VideoFrame decoded_frame(buffer, inputImage.Timestamp(), 0,
                                            webrtc::kVideoRotation_0);
           decoded_frame.set_ntp_time_ms(inputImage.ntp_time_ms_);
           decoded_frame.set_timestamp(inputImage.Timestamp());
+
           callback_->Decoded(decoded_frame);
         }
       }
