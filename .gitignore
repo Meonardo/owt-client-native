@@ -9,3 +9,4 @@
 /dist
 /talk/owt/docs/ios/html
 scripts/.vscode/*
+talk/owt/docs/cpp/html/*
