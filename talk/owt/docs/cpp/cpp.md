@@ -4,7 +4,7 @@ WebRTC Windows SDK Documentation
 WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 C++ 接口. 当前 SDK 基于 Intel 的 [OWT](https://github.com/open-webrtc-toolkit/owt-client-native)(Open WebRTC Toolkit)修改而来, 主要差异:
 - 移除原有的 `P2P` & `Conference` 业务逻辑代码, 保留对 WebRTC 封装, 解码媒体数据和渲染相关代码;
 - 增加 `RTCClient` 实体类, 实现部分 `RTCPeerConnection` 功能, 如: 
-  ```C++
+  ```c++
     void Close();
     void CreateOffer();
     void CreateAnswer();
@@ -16,7 +16,7 @@ WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 C++
 
     void GetConnectionStats();
   ```
-- 增加一下功能:
+- 增加以下功能:
    1. 支持一路 `Stream` 支持多个 `Render` Attach;
    2. 发布本地摄像头(屏幕)时选择麦克风(使用默认扬声器);
    3. 支持选择不同屏幕进行发布;
@@ -49,7 +49,7 @@ WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 C++
 
 # 4 信令 {#section4}
 推荐使用 WebSocket 协议作为信令交换协议, Demo 中使用了 [WebSocketpp](https://github.com/zaphoyd/websocketpp).
-# 5 NAT and firewall traversal(穿透服务) {#section5}
+# 5 NAT and firewall traversal {#section5}
 WebRTC Windows SDK 支持 STUN / TURN / ICE. 穿透服务建议使用 [Coturn](https://github.com/coturn/coturn).
 # 6 视频编解码格式 {#section6}
 - H.264
@@ -63,7 +63,7 @@ WebRTC Windows SDK 支持 STUN / TURN / ICE. 穿透服务建议使用 [Coturn](h
 使用 {@link owt.base.GlobalConfiguration GlobalConfiguration} 打开和关闭硬件解码加速功能, 请注意: 此配置为全局性配置, 一旦设置之后需要调用 `RTCClient::ResetPeerConnectionFactory()` 后再次创建 `RTCClient` 才能生效.
 # 7 捕获屏幕和麦克风 {#section7}
 - 屏幕
-    ```C++
+    ```c++
     std::shared_ptr<LocalDesktopStreamParameters> ldsp = std::make_shared<LocalDesktopStreamParameters>(enabledAudio, enabledVideo, showCursor);
     ldsp->SourceType(LocalDesktopStreamParameters::DesktopSourceType::kFullScreen);
     ldsp->CapturePolicy(LocalDesktopStreamParameters::DesktopCapturePolicy::kEnableDirectX);
@@ -76,7 +76,7 @@ WebRTC Windows SDK 支持 STUN / TURN / ICE. 穿透服务建议使用 [Coturn](h
   - 捕获整个屏幕, 设置 `LocalDesktopStreamParameters::DesktopSourceType::kFullScreen` ;
   - 无论是屏幕捕获还是 Window 捕获, 都需要通过实现 `LocalScreenStreamObserver` 接口来进行屏幕或者 Window 的筛选;
     
-    ```C++
+    ```c++
     /**
     @brief 捕获窗口或者屏幕数据源回调
     @param source_list 窗口列表或者屏幕列表 (id, title).
@@ -89,13 +89,13 @@ WebRTC Windows SDK 支持 STUN / TURN / ICE. 穿透服务建议使用 [Coturn](h
 
 - 麦克风
   - 枚举出当前设备所有音频输入设备
-    ```C++
+    ```c++
     // 注意: Windows 会枚举出两个默认的音频输出设备, 
     // 如: Default Device & Default Communications Device
     std::vector<AudioDevice> audio_devices = DeviceUtils::AudioCapturerDevices();
     ```
   - 创建 `LocalStream` 对象, 并且设置待录制麦克风设备的索引
-    ```C++
+    ```c++
     int error_code = 0;
     std::shared_ptr<LocalStream> stream = LocalStream::Create(lcsp, error_code);
 
