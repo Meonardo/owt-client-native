@@ -29,12 +29,10 @@ namespace owt
         class RTCConnectionChannel : public PeerConnectionChannel
         {
         public:
-            explicit RTCConnectionChannel(PeerConnectionChannelConfiguration config, const std::string& id, bool is_screencast = false);
+            explicit RTCConnectionChannel(PeerConnectionChannelConfiguration config, const std::string& id);
             virtual ~RTCConnectionChannel();
             // Unique id
             std::string id() const;
-            // Receiving screencast from mobile devices
-            bool is_screencast() const;
             // Create offer
             void CreateOffer() override;
             // Create Answer

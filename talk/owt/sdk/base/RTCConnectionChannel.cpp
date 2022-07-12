@@ -1,16 +1,15 @@
 #include "talk/owt/sdk/base/RTCConnectionChannel.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/api/task_queue/default_task_queue_factory.h"
+//#include "webrtc/api/task_queue/default_task_queue_factory.h"
 #include "talk/owt/sdk/base/sdputils.h"
 
 namespace owt
 {
 	namespace base
 	{
-        RTCConnectionChannel::RTCConnectionChannel(PeerConnectionChannelConfiguration config, const std::string& id, bool is_screencast) :
+        RTCConnectionChannel::RTCConnectionChannel(PeerConnectionChannelConfiguration config, const std::string& id) :
             PeerConnectionChannel(config),
             id_(id),
-            is_screencast_(is_screencast),
             session_state_(kSessionStateReady),
             remote_stream_(nullptr),
             is_creating_offer_(false),
@@ -18,18 +17,12 @@ namespace owt
         {
             /*auto task_queue_factory_ = webrtc::CreateDefaultTaskQueueFactory();
             event_queue_ = std::make_unique<rtc::TaskQueue>(task_queue_factory_->CreateTaskQueue("ConnectionChannelEventQueue", webrtc::TaskQueueFactory::Priority::NORMAL));*/
-
             InitializePeerConnection();
         }
 
         std::string RTCConnectionChannel::id() const
         {
             return id_;
-        }
-
-        bool RTCConnectionChannel::is_screencast() const
-        {
-            return is_screencast_;
         }
 
         RTCConnectionChannel::~RTCConnectionChannel()
@@ -330,15 +323,13 @@ namespace owt
                 RTC_LOG(LS_ERROR) << "Error parsing local description.";
                 RTC_DCHECK(false);
             }
-            if (!is_screencast_)
+
+            std::vector<AudioCodec> audio_codecs;
+            for (auto& audio_enc_param : configuration_.audio) 
             {
-                std::vector<AudioCodec> audio_codecs;
-                for (auto& audio_enc_param : configuration_.audio)
-                {
-                    audio_codecs.push_back(audio_enc_param.codec.name);
-                }
-                sdp_string = SdpUtils::SetPreferAudioCodecs(sdp_string, audio_codecs);
+                audio_codecs.push_back(audio_enc_param.codec.name);
             }
+            sdp_string = SdpUtils::SetPreferAudioCodecs(sdp_string, audio_codecs);
            
             std::vector<VideoCodec> video_codecs;
             for (auto& video_enc_param : configuration_.video)

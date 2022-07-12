@@ -8,11 +8,10 @@ namespace owt
         RTCClient::RTCClient(
             RTCClientConfiguration config, 
             const std::string& id, 
-            RTCClientObserver* observer, 
-            bool is_screencast) :
+            RTCClientObserver* observer) :
             rtc_config_(config)
         {
-            pcc_ = std::make_shared<RTCConnectionChannel>(GetPeerConnectionChannelConfiguration(), id, is_screencast);
+            pcc_ = std::make_shared<RTCConnectionChannel>(GetPeerConnectionChannelConfiguration(), id);
             pcc_->AddObserver(observer);
             rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
         }
@@ -20,11 +19,6 @@ namespace owt
         std::string RTCClient::id() const
         {
             return pcc_->id();
-        }
-
-        bool RTCClient::is_screencast() const
-        {
-            return pcc_->is_screencast();
         }
 
         RTCClient::~RTCClient()
@@ -105,6 +99,11 @@ namespace owt
         void RTCClient::ResetPeerConnectionFactory()
         {
             RTCConnectionChannel::ResetPeerConnectionFactory();
+        }
+
+        void SetRTCLogLevel(RTCCLogLevel level) 
+        {
+            rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)level);
         }
     }
 }

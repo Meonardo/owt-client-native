@@ -3,7 +3,7 @@ WebRTC Windows SDK Documentation
 # 1 简介 {#section1}
 WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 c 接口. 当前 SDK 基于 Intel 的 [OWT](https://github.com/open-webrtc-toolkit/owt-client-native)(Open WebRTC Toolkit)修改而来, 主要差异:
 - 移除原有的 `P2P` & `Conference` 业务逻辑代码, 保留对 WebRTC 封装, 解码媒体数据和渲染相关代码;
-- 增加 `RTCClient` 实体类, 实现部分 `RTCPeerConnection` 功能, 如: 
+- 增加 {@link owt.base.RTCClient RTCClient} 实体类, 实现部分 `RTCPeerConnection` 功能, 如: 
   ```c
     void Close();
     void CreateOffer();
@@ -16,6 +16,8 @@ WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 c �
 
     void GetConnectionStats();
   ```
+  另外增加了接口类 {@link owt.base.RTCClientObserver RTCClientObserver} 作为上述部分方法的回调方法.
+  
 - 增加以下功能:
    1. 支持一路 `Stream` 支持多个 `Render` Attach;
    2. 发布本地摄像头(屏幕)时选择麦克风(使用默认扬声器);
@@ -27,6 +29,7 @@ WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 c �
 # 2 支持的系统版本及平台 {#section2}
 - Windows 10 及以上;
 - 64 bit.
+- Qt: 5.15.2(6.3.0 使用暂未发现问题)
 # 3 开始使用 {#section3}
 推荐使用 Visual Studio 2019及以上版本进行开发和调试, 此SDK将以静态库形式提供 `(owt-debug.lib | owt-release.lib)`, 
 
@@ -36,7 +39,7 @@ WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 c �
   
 详细步骤为: 
 1. 选中项目文件, 查看属性(Alt + Enter);
-2. 选中 C/c 项;
+2. 选中 C/C++ 项;
 3. 选择 Code Generation, Runtime Library 并进行配置.
    
 `owt-debug.lib | owt-release` 中都引用了 Windows 平台 `DXVA` (DirectX Video Acceleration -- DirectX 视频渲染加速). 所以配置开发的项目时需要静态链接一下库文件:
@@ -44,6 +47,10 @@ WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 c �
 具体步骤:
 1. 选中项目文件, 查看属性(Alt + Enter);
 2. Linker, Input, Additional Dependencies(Debug 和 Release 都需配置);
+3. `owt-debug.lib | owt-release` 文件过大, 将不做版本控制, 每次自动生成后将会自动上传至 `hd@192.168.99.48:/home/hd/owt` 目录
+   ```bash
+   scp -r hd@192.168.99.48:/home/hd/owt /your/download/file/path
+   ```
 
 额外地还需要链接 `libmfx_vs2015.lib` (MSDK, 提供硬件加速编码, 解码能力)
 
@@ -75,16 +82,12 @@ WebRTC Windows SDK 支持 STUN / TURN / ICE. 穿透服务建议使用 [Coturn](h
   - 捕获某个 window, 设置 `LocalDesktopStreamParameters::DesktopSourceType::kApplication` ;
   - 捕获整个屏幕, 设置 `LocalDesktopStreamParameters::DesktopSourceType::kFullScreen` ;
   - 无论是屏幕捕获还是 Window 捕获, 都需要通过实现 `LocalScreenStreamObserver` 接口来进行屏幕或者 Window 的筛选;
-    
     ```c
-    /**
-    @brief 捕获窗口或者屏幕数据源回调
-    @param source_list 窗口列表或者屏幕列表 (id, title).
-    @param dest_source 待选中的数据源索引.
-    */
-    virtual void OnCaptureSourceNeeded(const std::unordered_map<int, std::string>& source_list, int& dest_source) {}
+    // 捕获窗口或者屏幕数据源回调
+    // source_list 窗口列表或者屏幕列表 (id, title).
+    // dest_source 待选中的数据源索引.
+    void OnCaptureSourceNeeded(const std::unordered_map<int, std::string>& source_list, int& dest_source) {}
     ```
-
   - **建议设置 `LocalDesktopStreamParameters::DesktopCapturePolicy` 为 `kEnableDirectX`.**
 
 - 麦克风
