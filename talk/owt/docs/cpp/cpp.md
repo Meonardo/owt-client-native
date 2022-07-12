@@ -1,7 +1,7 @@
 WebRTC Windows SDK Documentation
 ===============================
 # 1 简介 {#section1}
-WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 c 接口. 当前 SDK 基于 Intel 的 [OWT](https://github.com/open-webrtc-toolkit/owt-client-native)(Open WebRTC Toolkit)修改而来, 主要差异:
+WebRTC Windows SDK 提供 Windows 平台开发 Native WebRTC 应用程序的 C++ 接口. 当前 SDK 基于 Intel 的 [OWT](https://github.com/open-webrtc-toolkit/owt-client-native)(Open WebRTC Toolkit)修改而来, 主要差异:
 - 移除原有的 `P2P` & `Conference` 业务逻辑代码, 保留对 WebRTC 封装, 解码媒体数据和渲染相关代码;
 - 增加 {@link owt.base.RTCClient RTCClient} 实体类, 实现部分 `RTCPeerConnection` 功能, 如: 
   ```c
